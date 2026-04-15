@@ -1,0 +1,45 @@
+import { Ionicons } from "@expo/vector-icons";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { colors } from "../constants/theme";
+import { HomeScreen } from "../screens/HomeScreen";
+import { MapScreen } from "../screens/MapScreen";
+import { ProfileScreen } from "../screens/ProfileScreen";
+import { ScanScreen } from "../screens/ScanScreen";
+import type { MainTabParamList } from "../types/navigation";
+
+const Tab = createBottomTabNavigator<MainTabParamList>();
+
+export function MainTabNavigator() {
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        headerShown: false,
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.tabInactive,
+        tabBarStyle: {
+          backgroundColor: colors.surface,
+          borderTopColor: colors.border,
+          height: 62,
+          paddingBottom: 8,
+          paddingTop: 6,
+        },
+        tabBarLabelStyle: { fontSize: 12, fontWeight: "700" },
+        tabBarIcon: ({ color, size }) => {
+          const map: Record<keyof MainTabParamList, keyof typeof Ionicons.glyphMap> = {
+            Home: "home",
+            Scan: "camera",
+            Map: "map",
+            Profile: "person-circle",
+          };
+          const name = map[route.name as keyof MainTabParamList];
+          return <Ionicons name={name} size={size} color={color} />;
+        },
+      })}
+    >
+      <Tab.Screen name="Home" options={{ title: "Home" }} component={HomeScreen} />
+      <Tab.Screen name="Scan" options={{ title: "Scan" }} component={ScanScreen} />
+      <Tab.Screen name="Map" options={{ title: "Map" }} component={MapScreen} />
+      <Tab.Screen name="Profile" options={{ title: "Profile" }} component={ProfileScreen} />
+    </Tab.Navigator>
+  );
+}
