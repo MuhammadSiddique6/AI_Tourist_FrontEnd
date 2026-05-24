@@ -4,8 +4,9 @@ import type { CompositeNavigationProp } from "@react-navigation/native";
 import { useNavigation } from "@react-navigation/native";
 import type { StackNavigationProp } from "@react-navigation/stack";
 import { Image } from "expo-image";
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
 import {
+  ActivityIndicator,
   Animated,
   ScrollView,
   StyleSheet,
@@ -17,7 +18,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { colors, radii, shadows } from "../constants/theme";
 import { useAuth } from "../context/AuthContext";
 import { useSavedLandmarks } from "../context/SavedLandmarksContext";
-import { getAllLandmarks } from "../services/mockLandmarkService";
+import { useLandmarks } from "../hooks/useLandmarks";
+import { getLandmarkImageSource } from "../services/landmarkService";
 import type { Landmark } from "../types/landmark";
 import type { AppStackParamList, MainTabParamList } from "../types/navigation";
 
@@ -37,7 +39,8 @@ export function HomeScreen() {
   const navigation = useNavigation<HomeNav>();
   const { user } = useAuth();
   const { saved } = useSavedLandmarks();
-  const featuredLandmarks = getAllLandmarks().slice(0, 3);
+  const { landmarks, loading, error, refresh } = useLandmarks();
+  const featuredLandmarks = useMemo(() => landmarks.slice(0, 3), [landmarks]);
 
   const scanScale = useRef(new Animated.Value(1)).current;
   const mapScale = useRef(new Animated.Value(1)).current;
@@ -73,7 +76,6 @@ export function HomeScreen() {
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
         <View style={styles.header}>
           <View>
             <Text style={styles.greeting}>{getGreeting()}</Text>
@@ -88,7 +90,6 @@ export function HomeScreen() {
           </View>
         </View>
 
-        {/* Quick Actions */}
         <View style={styles.actionsRow}>
           <Animated.View style={{ flex: 1, transform: [{ scale: scanScale }] }}>
             <TouchableOpacity
@@ -133,7 +134,6 @@ export function HomeScreen() {
           </Animated.View>
         </View>
 
-        {/* Stats */}
         <Animated.View
           style={[styles.statsCard, { transform: [{ scale: statsScale }] }]}
         >
@@ -148,17 +148,18 @@ export function HomeScreen() {
           </TouchableOpacity>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>{featuredLandmarks.length}</Text>
-            <Text style={styles.statLabel}>Nearby</Text>
+            <Text style={styles.statValue}>{landmarks.length}</Text>
+            <Text style={styles.statLabel}>Landmarks</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>12</Text>
-            <Text style={styles.statLabel}>Cities</Text>
+            <Text style={styles.statValue}>
+              {new Set(landmarks.map((l) => l.category)).size}
+            </Text>
+            <Text style={styles.statLabel}>Categories</Text>
           </View>
         </Animated.View>
 
-        {/* Featured Landmarks */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Featured Landmarks</Text>
           <TouchableOpacity onPress={goToMap} activeOpacity={0.7}>
@@ -166,43 +167,60 @@ export function HomeScreen() {
           </TouchableOpacity>
         </View>
 
-        {featuredLandmarks.map((landmark, index) => (
-          <TouchableOpacity
-            key={landmark.id}
-            style={[
-              styles.landmarkCard,
-              { marginBottom: index === featuredLandmarks.length - 1 ? 0 : 12 },
-            ]}
-            onPress={() => openLandmark(landmark)}
-            activeOpacity={0.85}
-          >
-            <Image
-              source={{ uri: landmark.imageUri }}
-              style={styles.landmarkImage}
-              contentFit="cover"
-            />
-            <View style={styles.landmarkInfo}>
-              <Text style={styles.landmarkName}>{landmark.name}</Text>
-              <Text style={styles.landmarkCat}>{landmark.category}</Text>
-              <View style={styles.landmarkRow}>
-                <Ionicons name="location" size={14} color={colors.primary} />
-                <Text style={styles.landmarkDist}>
-                  {landmark.distanceMeters >= 1000
-                    ? `${(landmark.distanceMeters / 1000).toFixed(1)} km`
-                    : `${landmark.distanceMeters} m`}{" "}
-                  away
-                </Text>
-              </View>
-            </View>
-            <View style={styles.landmarkChevron}>
-              <Ionicons
-                name="chevron-forward"
-                size={20}
-                color={colors.primary}
-              />
-            </View>
-          </TouchableOpacity>
-        ))}
+        {loading ? (
+          <ActivityIndicator
+            color={colors.primary}
+            style={{ marginVertical: 24 }}
+          />
+        ) : null}
+
+        {error ? (
+          <View style={styles.errorBox}>
+            <Text style={styles.errorText}>{error}</Text>
+            <TouchableOpacity onPress={refresh} activeOpacity={0.8}>
+              <Text style={styles.retryText}>Tap to retry</Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
+
+        {!loading && !error
+          ? featuredLandmarks.map((landmark, index) => (
+              <TouchableOpacity
+                key={landmark.id}
+                style={[
+                  styles.landmarkCard,
+                  {
+                    marginBottom:
+                      index === featuredLandmarks.length - 1 ? 0 : 12,
+                  },
+                ]}
+                onPress={() => openLandmark(landmark)}
+                activeOpacity={0.85}
+              >
+                <Image
+                  source={getLandmarkImageSource(landmark)}
+                  style={styles.landmarkImage}
+                  contentFit="cover"
+                />
+                <View style={styles.landmarkInfo}>
+                  <Text style={styles.landmarkName}>{landmark.name}</Text>
+                  <Text style={styles.landmarkCat}>{landmark.category}</Text>
+                  {landmark.summary ? (
+                    <Text style={styles.landmarkSummary} numberOfLines={2}>
+                      {landmark.summary}
+                    </Text>
+                  ) : null}
+                </View>
+                <View style={styles.landmarkChevron}>
+                  <Ionicons
+                    name="chevron-forward"
+                    size={20}
+                    color={colors.primary}
+                  />
+                </View>
+              </TouchableOpacity>
+            ))
+          : null}
       </ScrollView>
     </SafeAreaView>
   );
@@ -281,6 +299,19 @@ const styles = StyleSheet.create({
   },
   sectionTitle: { fontSize: 18, fontWeight: "900", color: colors.text },
   seeAll: { fontSize: 14, fontWeight: "700", color: colors.primary },
+  errorBox: {
+    backgroundColor: colors.surface,
+    borderRadius: radii.md,
+    padding: 16,
+    marginBottom: 12,
+  },
+  errorText: { color: colors.danger, fontWeight: "600", fontSize: 14 },
+  retryText: {
+    marginTop: 8,
+    color: colors.primary,
+    fontWeight: "700",
+    fontSize: 14,
+  },
   landmarkCard: {
     flexDirection: "row",
     alignItems: "center",
@@ -299,16 +330,11 @@ const styles = StyleSheet.create({
     marginTop: 2,
     textTransform: "capitalize",
   },
-  landmarkRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 8,
-    gap: 4,
-  },
-  landmarkDist: {
-    fontSize: 13,
+  landmarkSummary: {
+    fontSize: 12,
     color: colors.textSecondary,
-    fontWeight: "600",
+    marginTop: 6,
+    lineHeight: 17,
   },
   landmarkChevron: { paddingRight: 14, justifyContent: "center" },
 });

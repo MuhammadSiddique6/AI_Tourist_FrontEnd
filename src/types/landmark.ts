@@ -1,3 +1,5 @@
+import type { ImageSource } from "expo-image";
+
 export type LandmarkCategory = "nearby" | "museum" | "religious" | "family";
 
 export interface Coordinates {
@@ -7,6 +9,8 @@ export interface Coordinates {
 
 export interface Landmark {
   id: string;
+  /** Backend slug, e.g. badshahi_mosque */
+  slug: string;
   name: string;
   confidence: number;
   summary: string;
@@ -14,11 +18,9 @@ export interface Landmark {
   history: string;
   coordinate: Coordinates;
   category: LandmarkCategory;
-  /** meters — mock display value */
   distanceMeters: number;
-  /** Remote image for header */
-  imageUri: string;
-  /** Present when produced by mock recognition */
+  /** Local asset or remote URI */
+  imageSource: ImageSource;
   translatedPreview?: string;
 }
 

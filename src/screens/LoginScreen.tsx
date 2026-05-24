@@ -1,12 +1,14 @@
 import { useNavigation } from "@react-navigation/native";
 import type { StackNavigationProp } from "@react-navigation/stack";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -21,6 +23,8 @@ import type { AuthStackParamList } from "../types/navigation";
 
 type Nav = StackNavigationProp<AuthStackParamList, "Login">;
 
+const KEYBOARD_OFFSET = Platform.OS === "ios" ? 8 : 0;
+
 export function LoginScreen() {
   const navigation = useNavigation<Nav>();
   const { login } = useAuth();
@@ -29,21 +33,26 @@ export function LoginScreen() {
   const [errors, setErrors] = useState<ReturnType<typeof validateLogin>>({});
   const [submitting, setSubmitting] = useState(false);
 
+  const passwordRef = useRef<TextInput>(null);
+
   const onSubmit = () => {
+    Keyboard.dismiss();
     const next = validateLogin({ email, password });
     setErrors(next);
     if (Object.keys(next).length > 0) return;
+
     setSubmitting(true);
     api.auth
       .login(email.trim().toLowerCase(), password)
       .then((res) => {
-        // Expecting { user: { email, name }, token }
         const token = res.token ?? null;
         const backendUser = res.user ?? null;
         const user = backendUser
           ? {
+              id: backendUser.id != null ? String(backendUser.id) : undefined,
               email: backendUser.email,
               displayName: backendUser.name ?? backendUser.displayName,
+              role: backendUser.role,
             }
           : {
               email: email.trim().toLowerCase(),
@@ -58,15 +67,27 @@ export function LoginScreen() {
       .finally(() => setSubmitting(false));
   };
 
+  const clearFieldError = (field: keyof ReturnType<typeof validateLogin>) => {
+    if (errors[field]) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={KEYBOARD_OFFSET}
       >
         <ScrollView
-          contentContainerStyle={[styles.scroll, styles.scrollContent]}
+          contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.hero}>
@@ -85,15 +106,31 @@ export function LoginScreen() {
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
+              autoComplete="email"
+              textContentType="emailAddress"
+              returnKeyType="next"
+              blurOnSubmit={false}
               value={email}
-              onChangeText={setEmail}
+              onChangeText={(text) => {
+                setEmail(text);
+                clearFieldError("email");
+              }}
+              onSubmitEditing={() => passwordRef.current?.focus()}
               error={errors.email}
             />
             <TextField
+              ref={passwordRef}
               label="Password"
-              secureTextEntry
+              isPassword
+              autoComplete="password"
+              textContentType="password"
+              returnKeyType="done"
+              onSubmitEditing={onSubmit}
               value={password}
-              onChangeText={setPassword}
+              onChangeText={(text) => {
+                setPassword(text);
+                clearFieldError("password");
+              }}
               error={errors.password}
             />
             <View style={styles.forgotRow}>
@@ -109,11 +146,13 @@ export function LoginScreen() {
               title="Sign in"
               onPress={onSubmit}
               loading={submitting}
+              disabled={submitting}
               style={styles.mt}
             />
             <TouchableOpacity
               style={styles.linkRow}
               onPress={() => navigation.navigate("Register")}
+              activeOpacity={0.8}
             >
               <Text style={styles.linkMuted}>New here?</Text>
               <Text style={styles.link}> Create an account</Text>
@@ -128,8 +167,12 @@ export function LoginScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   flex: { flex: 1 },
-  scroll: { padding: 22, paddingBottom: 40 },
-  scrollContent: { flexGrow: 1 },
+  scroll: {
+    flexGrow: 1,
+    padding: 22,
+    paddingBottom: 40,
+    justifyContent: "center",
+  },
   hero: { marginBottom: 22 },
   kicker: {
     color: colors.primary,
@@ -157,13 +200,12 @@ const styles = StyleSheet.create({
     color: colors.text,
     marginBottom: 8,
   },
-  /** Above the primary button so Android elevation on the button cannot paint over this link. */
   forgotRow: {
     width: "100%",
     flexDirection: "row",
     justifyContent: "flex-end",
     alignItems: "center",
-    marginTop: 8,
+    marginTop: 4,
     marginBottom: 4,
     zIndex: 10,
   },

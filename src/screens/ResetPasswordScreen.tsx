@@ -5,14 +5,16 @@ import {
   useRoute,
 } from "@react-navigation/native";
 import type { StackNavigationProp } from "@react-navigation/stack";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Alert,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -37,6 +39,7 @@ export function ResetPasswordScreen() {
     ReturnType<typeof validatePasswordReset>
   >({});
   const [submitting, setSubmitting] = useState(false);
+  const confirmRef = useRef<TextInput>(null);
 
   useEffect(() => {
     if (!params.otp_code) {
@@ -47,6 +50,7 @@ export function ResetPasswordScreen() {
   }, [params.otp_code, navigation]);
 
   const onSubmit = () => {
+    Keyboard.dismiss();
     if (!params.otp_code) {
       navigation.navigate("ForgotPassword");
       return;
@@ -78,11 +82,14 @@ export function ResetPasswordScreen() {
     <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 8 : 0}
       >
         <ScrollView
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          showsVerticalScrollIndicator={false}
         >
           <TouchableOpacity
             onPress={() => navigation.goBack()}
@@ -99,14 +106,24 @@ export function ResetPasswordScreen() {
           <View style={styles.card}>
             <TextField
               label="New password"
-              secureTextEntry
+              isPassword
+              autoComplete="password-new"
+              textContentType="newPassword"
+              returnKeyType="next"
+              blurOnSubmit={false}
               value={password}
               onChangeText={setPassword}
+              onSubmitEditing={() => confirmRef.current?.focus()}
               error={errors.password}
             />
             <TextField
+              ref={confirmRef}
               label="Confirm new password"
-              secureTextEntry
+              isPassword
+              autoComplete="password-new"
+              textContentType="newPassword"
+              returnKeyType="done"
+              onSubmitEditing={onSubmit}
               value={confirmPassword}
               onChangeText={setConfirmPassword}
               error={errors.confirmPassword}
@@ -115,6 +132,7 @@ export function ResetPasswordScreen() {
               title="Update password"
               onPress={onSubmit}
               loading={submitting}
+              disabled={submitting}
             />
           </View>
         </ScrollView>

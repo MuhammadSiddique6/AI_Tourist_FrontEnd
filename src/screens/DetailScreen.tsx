@@ -17,6 +17,9 @@ import { DetailTabBar, type DetailTab } from "../components/DetailTabBar";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { colors, radii, shadows } from "../constants/theme";
 import { useSavedLandmarks } from "../context/SavedLandmarksContext";
+import { hasLandmarkModel } from "../constants/landmarkModels";
+import { normalizeLandmarkKey } from "../constants/landmarkImages";
+import { getLandmarkImageSource } from "../services/landmarkService";
 import { mockTranslateLandmark } from "../services/translateMock";
 import { speakLandmarkSummary, stopSpeaking } from "../services/ttsService";
 import type { AppStackParamList } from "../types/navigation";
@@ -54,15 +57,26 @@ export function DetailScreen() {
     );
   };
 
+  const hasDistance = landmark.distanceMeters > 0;
   const distKm = (landmark.distanceMeters / 1000).toFixed(
     landmark.distanceMeters >= 1000 ? 1 : 2,
   );
+  const canView3D = hasLandmarkModel(landmark.slug ?? landmark.name);
+
+  const open3DViewer = () => {
+    navigation.navigate("Model3DViewer", {
+      landmark: {
+        ...landmark,
+        slug: landmark.slug ?? normalizeLandmarkKey(landmark.name),
+      },
+    });
+  };
 
   return (
     <View style={styles.root}>
       <View style={styles.header}>
         <Image
-          source={{ uri: landmark.imageUri }}
+          source={getLandmarkImageSource(landmark)}
           style={styles.headerImage}
           contentFit="cover"
         />
@@ -78,11 +92,15 @@ export function DetailScreen() {
             <Text style={styles.title} numberOfLines={2}>
               {landmark.name}
             </Text>
-            <Text style={styles.distance}>
-              {landmark.distanceMeters >= 1000
-                ? `${distKm} km away · mock GPS`
-                : `${Math.round(landmark.distanceMeters)} m away · mock GPS`}
-            </Text>
+            {hasDistance ? (
+              <Text style={styles.distance}>
+                {landmark.distanceMeters >= 1000
+                  ? `${distKm} km away`
+                  : `${Math.round(landmark.distanceMeters)} m away`}
+              </Text>
+            ) : (
+              <Text style={styles.distance}>{landmark.category}</Text>
+            )}
           </View>
         </SafeAreaView>
       </View>
@@ -98,6 +116,13 @@ export function DetailScreen() {
         </View>
 
         <View style={styles.actions}>
+          {canView3D ? (
+            <PrimaryButton
+              title="View 3D Model"
+              onPress={open3DViewer}
+              style={styles.actionBtn}
+            />
+          ) : null}
           <PrimaryButton
             title="Listen"
             onPress={listen}

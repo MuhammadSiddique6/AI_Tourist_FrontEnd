@@ -139,6 +139,21 @@ export const translate = {
   },
 };
 
+export const admin = {
+  async getUsers() {
+    return request(`/admin/users`, { method: "GET" });
+  },
+  async blockUser(id: string | number) {
+    return request(`/admin/users/${id}/block`, { method: "PUT" });
+  },
+  async unblockUser(id: string | number) {
+    return request(`/admin/users/${id}/unblock`, { method: "PUT" });
+  },
+  async deleteUser(id: string | number) {
+    return request(`/admin/users/${id}`, { method: "DELETE" });
+  },
+};
+
 export const ai = {
   async recognize(file: { uri: string; name?: string; type?: string }) {
     const form = new FormData();
@@ -156,4 +171,4 @@ export const ai = {
   },
 };
 
-export default { setAuthToken, auth, landmarks, translate, ai };
+export default { setAuthToken, auth, admin, landmarks, translate, ai };

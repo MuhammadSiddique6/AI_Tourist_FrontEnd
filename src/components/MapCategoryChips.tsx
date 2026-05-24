@@ -6,8 +6,7 @@ import {
     View,
 } from "react-native";
 import { colors, radii, shadows } from "../constants/theme";
-import type { MapFilterId } from "../services/mockLandmarkService";
-import { MAP_FILTER_LABELS } from "../services/mockLandmarkService";
+import { MAP_FILTER_LABELS, type MapFilterId } from "../constants/mapFilters";
 
 type Props = {
   active: MapFilterId;

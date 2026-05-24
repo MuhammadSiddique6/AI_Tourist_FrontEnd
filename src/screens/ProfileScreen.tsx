@@ -14,6 +14,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { colors, radii, shadows } from "../constants/theme";
 import { useAuth } from "../context/AuthContext";
+import { isAdminUser } from "../types/auth";
 import { useSavedLandmarks } from "../context/SavedLandmarksContext";
 import type { Landmark } from "../types/landmark";
 import type { AppStackParamList, MainTabParamList } from "../types/navigation";
@@ -39,6 +40,12 @@ export function ProfileScreen() {
     navigation.navigate("Detail", { landmark: item });
   };
 
+  const openAdmin = () => {
+    navigation.navigate("AdminUsers");
+  };
+
+  const showAdmin = isAdminUser(user);
+
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <View style={styles.headerRow}>
@@ -59,6 +66,23 @@ export function ProfileScreen() {
           <Text style={styles.email}>{user?.email}</Text>
         </View>
       </View>
+
+      {showAdmin ? (
+        <TouchableOpacity
+          style={styles.adminCard}
+          onPress={openAdmin}
+          activeOpacity={0.9}
+        >
+          <View style={styles.adminIcon}>
+            <Ionicons name="shield-checkmark" size={22} color={colors.primary} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.adminTitle}>Admin panel</Text>
+            <Text style={styles.adminSub}>View, block, or delete users</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={22} color={colors.primary} />
+        </TouchableOpacity>
+      ) : null}
 
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Saved landmarks</Text>
@@ -135,8 +159,35 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: radii.lg,
     padding: 16,
-    marginBottom: 22,
+    marginBottom: 14,
     ...shadows.elevated,
+  },
+  adminCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.surface,
+    borderRadius: radii.lg,
+    padding: 16,
+    marginBottom: 22,
+    borderWidth: 1.5,
+    borderColor: colors.primaryMuted,
+    ...shadows.elevated,
+  },
+  adminIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.primaryMuted,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+  },
+  adminTitle: { fontSize: 16, fontWeight: "800", color: colors.text },
+  adminSub: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginTop: 2,
+    fontWeight: "600",
   },
   avatar: {
     width: 52,

@@ -20,9 +20,11 @@ import { ResultCard } from "../components/ResultCard";
 import { ScannerOverlay } from "../components/ScannerOverlay";
 import { colors, radii, shadows } from "../constants/theme";
 import { useSavedLandmarks } from "../context/SavedLandmarksContext";
-import { API_BASE_URL } from "../config";
-import { recognizeLandmarkMock } from "../services/mockLandmarkService";
 import api from "../services/api";
+import {
+  mapApiLandmarkToRecognition,
+  type ApiLandmark,
+} from "../services/landmarkService";
 import { mockTranslateLandmark } from "../services/translateMock";
 import { speakLandmarkSummary } from "../services/ttsService";
 import type { LandmarkRecognitionResult } from "../types/landmark";
@@ -110,22 +112,10 @@ export function ScanScreen() {
         return;
       }
 
-      const mapped: LandmarkRecognitionResult = {
-        id: String(landmark.id),
-        name: landmark.name,
-        confidence: confidence || 0.9,
-        summary: landmark.description || "",
-        etiquette: "",
-        history: "",
-        coordinate: {
-          latitude: Number(landmark.latitude) || 0,
-          longitude: Number(landmark.longitude) || 0,
-        },
-        category: "nearby",
-        distanceMeters: 0,
-        imageUri: landmark.image_path ? `${API_BASE_URL}${landmark.image_path}` : "",
-        translatedPreview: "",
-      };
+      const mapped = mapApiLandmarkToRecognition(
+        landmark as ApiLandmark,
+        confidence,
+      );
 
       setResult(mapped);
     } catch (err: any) {
