@@ -33,7 +33,10 @@ export function MapScreen() {
   const insets = useSafeAreaInsets();
   const [filter, setFilter] = useState<MapFilterId>("all");
   const all = useMemo(() => getAllLandmarks(), []);
-  const visible = useMemo(() => filterLandmarksByCategory(all, filter), [all, filter]);
+  const visible = useMemo(
+    () => filterLandmarksByCategory(all, filter),
+    [all, filter],
+  );
 
   const openDetail = (landmark: Landmark) => {
     navigation.navigate("Detail", { landmark });
@@ -79,8 +82,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: radii.lg,
     padding: 14,
-    ...shadows.card,
+    ...shadows.elevated,
   },
   screenTitle: { fontSize: 18, fontWeight: "900", color: colors.text },
-  screenSub: { marginTop: 4, fontSize: 13, color: colors.textSecondary, fontWeight: "600" },
+  screenSub: {
+    marginTop: 4,
+    fontSize: 13,
+    color: colors.textSecondary,
+    fontWeight: "600",
+  },
 });

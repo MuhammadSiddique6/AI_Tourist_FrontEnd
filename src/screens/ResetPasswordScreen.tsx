@@ -1,5 +1,9 @@
-import { CommonActions, useNavigation, useRoute } from "@react-navigation/native";
 import type { RouteProp } from "@react-navigation/native";
+import {
+  CommonActions,
+  useNavigation,
+  useRoute,
+} from "@react-navigation/native";
 import type { StackNavigationProp } from "@react-navigation/stack";
 import { useEffect, useState } from "react";
 import {
@@ -16,8 +20,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { TextField } from "../components/TextField";
 import { colors, radii, shadows } from "../constants/theme";
-import { savePasswordForEmail } from "../services/mockCredentialStore";
-import { clearPasswordResetSession, isEmailOtpVerified } from "../services/mockPasswordReset";
+import api from "../services/api";
 import { validatePasswordReset } from "../services/validation";
 import type { AuthStackParamList } from "../types/navigation";
 
@@ -30,19 +33,21 @@ export function ResetPasswordScreen() {
   const { email } = params;
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [errors, setErrors] = useState<ReturnType<typeof validatePasswordReset>>({});
+  const [errors, setErrors] = useState<
+    ReturnType<typeof validatePasswordReset>
+  >({});
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!isEmailOtpVerified(email)) {
+    if (!params.otp_code) {
       Alert.alert("Session expired", "Please verify your code again.", [
         { text: "OK", onPress: () => navigation.navigate("ForgotPassword") },
       ]);
     }
-  }, [email, navigation]);
+  }, [params.otp_code, navigation]);
 
   const onSubmit = () => {
-    if (!isEmailOtpVerified(email)) {
+    if (!params.otp_code) {
       navigation.navigate("ForgotPassword");
       return;
     }
@@ -50,13 +55,23 @@ export function ResetPasswordScreen() {
     setErrors(next);
     if (Object.keys(next).length > 0) return;
     setSubmitting(true);
-    setTimeout(() => {
-      savePasswordForEmail(email, password);
-      clearPasswordResetSession(email);
-      setSubmitting(false);
-      navigation.dispatch(CommonActions.reset({ index: 0, routes: [{ name: "Login" }] }));
-      Alert.alert("Password updated", "You can now sign in with your new password.");
-    }, 400);
+    api.auth
+      .resetPassword(email, params.otp_code ?? "", password)
+      .then(() => {
+        setSubmitting(false);
+        navigation.dispatch(
+          CommonActions.reset({ index: 0, routes: [{ name: "Login" }] }),
+        );
+        Alert.alert(
+          "Password updated",
+          "You can now sign in with your new password.",
+        );
+      })
+      .catch((err) => {
+        const msg = err?.message || "Unable to reset password";
+        Alert.alert("Error", msg);
+        setSubmitting(false);
+      });
   };
 
   return (
@@ -65,8 +80,14 @@ export function ResetPasswordScreen() {
         style={styles.flex}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.back}>
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          keyboardShouldPersistTaps="handled"
+        >
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.back}
+          >
             <Text style={styles.backText}>← Back to code</Text>
           </TouchableOpacity>
 
@@ -90,7 +111,11 @@ export function ResetPasswordScreen() {
               onChangeText={setConfirmPassword}
               error={errors.confirmPassword}
             />
-            <PrimaryButton title="Update password" onPress={onSubmit} loading={submitting} />
+            <PrimaryButton
+              title="Update password"
+              onPress={onSubmit}
+              loading={submitting}
+            />
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -105,7 +130,12 @@ const styles = StyleSheet.create({
   back: { marginBottom: 16 },
   backText: { color: colors.primary, fontWeight: "700", fontSize: 15 },
   hero: { marginBottom: 18 },
-  title: { fontSize: 24, fontWeight: "900", color: colors.text, marginBottom: 8 },
+  title: {
+    fontSize: 24,
+    fontWeight: "900",
+    color: colors.text,
+    marginBottom: 8,
+  },
   sub: { fontSize: 15, lineHeight: 22, color: colors.textSecondary },
   card: {
     backgroundColor: colors.surface,

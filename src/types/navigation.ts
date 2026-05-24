@@ -6,7 +6,7 @@ export type AuthStackParamList = {
   Register: undefined;
   ForgotPassword: undefined;
   OtpVerification: { email: string };
-  ResetPassword: { email: string };
+  ResetPassword: { email: string; otp_code?: string };
 };
 
 export type MainTabParamList = {

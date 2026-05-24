@@ -1,16 +1,21 @@
 export const colors = {
-  background: "#F0F4FA",
+  background: "#F5F5F5",
   surface: "#FFFFFF",
-  primary: "#4A7BC8",
-  primaryMuted: "#E3ECFA",
-  accent: "#7BC9A8",
-  text: "#1C2740",
-  textSecondary: "#5C6B86",
-  border: "#D9E2EF",
-  danger: "#E85D5D",
-  overlay: "rgba(12, 24, 48, 0.45)",
+  primary: "#2C6E49",
+  primaryMuted: "#4C956C",
+  accent: "#FFC857",
+  accentMuted: "#FFF3D4",
+  secondary: "#4C956C",
+  secondaryMuted: "#E8F5E9",
+  text: "#1E1E1E",
+  textSecondary: "#6B7280",
+  border: "#E5E7EB",
+  danger: "#DC2626",
+  success: "#10B981",
+  successMuted: "#D1F7E5",
+  overlay: "rgba(30, 30, 30, 0.5)",
   scannerFrame: "rgba(255, 255, 255, 0.92)",
-  tabInactive: "#8A96AC",
+  tabInactive: "#9CA3AF",
 };
 
 export const radii = {
@@ -22,17 +27,30 @@ export const radii = {
 
 export const shadows = {
   card: {
-    shadowColor: "#1C2740",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 6,
+    shadowColor: "#2C6E49",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 8,
   },
   soft: {
-    shadowColor: "#1C2740",
+    shadowColor: "#1E1E1E",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
+    shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 3,
   },
+  elevated: {
+    shadowColor: "#2C6E49",
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+};
+
+export const animations = {
+  pressOpacity: 0.8,
+  mediumDuration: 300,
+  quickDuration: 200,
 };

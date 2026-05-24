@@ -1,5 +1,5 @@
-import { useNavigation, useRoute } from "@react-navigation/native";
 import type { RouteProp } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import type { StackNavigationProp } from "@react-navigation/stack";
 import { useState } from "react";
 import {
@@ -16,7 +16,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { TextField } from "../components/TextField";
 import { colors, radii, shadows } from "../constants/theme";
-import { sendPasswordResetOtp, verifyPasswordResetOtp } from "../services/mockPasswordReset";
+import api from "../services/api";
 import { validateOtpInput } from "../services/validation";
 import type { AuthStackParamList } from "../types/navigation";
 
@@ -37,24 +37,21 @@ export function OtpVerificationScreen() {
     setErrors(next);
     if (Object.keys(next).length > 0) return;
     setLoading(true);
-    setTimeout(() => {
-      const ok = verifyPasswordResetOtp(email, otp);
-      setLoading(false);
-      if (!ok) {
-        Alert.alert("Invalid code", "The code is wrong or has expired. Tap “Resend code” to get a new email.");
-        return;
-      }
-      navigation.navigate("ResetPassword", { email });
-    }, 350);
+    // Backend validates OTP as part of the reset step; just navigate and pass the code through.
+    setLoading(false);
+    navigation.navigate("ResetPassword", { email, otp_code: otp });
   };
 
   const onResend = async () => {
     setResendLoading(true);
     try {
-      const { code } = await sendPasswordResetOtp(email);
+      const res = await api.auth.resendOtp(email);
+      const code = (res && (res.code || res.otp)) ?? null;
       Alert.alert(
         "Code sent again",
-        `A new 6-digit code was sent to:\n${email}\n\n—\nDemo: your new code is ${code}.`
+        code
+          ? `A new 6-digit code was sent to:\n${email}\n\n—\nDemo: your new code is ${code}.`
+          : `A new 6-digit code was sent to:\n${email}`,
       );
     } finally {
       setResendLoading(false);
@@ -67,8 +64,14 @@ export function OtpVerificationScreen() {
         style={styles.flex}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.back}>
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          keyboardShouldPersistTaps="handled"
+        >
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.back}
+          >
             <Text style={styles.backText}>← Use a different email</Text>
           </TouchableOpacity>
 
@@ -79,8 +82,8 @@ export function OtpVerificationScreen() {
             </Text>
             <Text style={styles.email}>{email}</Text>
             <Text style={styles.subMuted}>
-              Enter the code from that message below. If you do not see it, wait a minute or check
-              spam and promotions.
+              Enter the code from that message below. If you do not see it, wait
+              a minute or check spam and promotions.
             </Text>
           </View>
 
@@ -93,14 +96,20 @@ export function OtpVerificationScreen() {
               onChangeText={(t) => setOtp(t.replace(/\D/g, "").slice(0, 6))}
               error={errors.otp}
             />
-            <PrimaryButton title="Verify and continue" onPress={onVerify} loading={loading} />
+            <PrimaryButton
+              title="Verify and continue"
+              onPress={onVerify}
+              loading={loading}
+            />
             <TouchableOpacity
               style={styles.resend}
               onPress={onResend}
               disabled={resendLoading}
               activeOpacity={0.8}
             >
-              <Text style={styles.resendText}>{resendLoading ? "Sending…" : "Resend code to email"}</Text>
+              <Text style={styles.resendText}>
+                {resendLoading ? "Sending…" : "Resend code to email"}
+              </Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -116,7 +125,12 @@ const styles = StyleSheet.create({
   back: { marginBottom: 16 },
   backText: { color: colors.primary, fontWeight: "700", fontSize: 15 },
   hero: { marginBottom: 18 },
-  title: { fontSize: 24, fontWeight: "900", color: colors.text, marginBottom: 10 },
+  title: {
+    fontSize: 24,
+    fontWeight: "900",
+    color: colors.text,
+    marginBottom: 10,
+  },
   sub: { fontSize: 15, lineHeight: 22, color: colors.textSecondary },
   email: {
     fontSize: 16,

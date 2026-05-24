@@ -3,7 +3,13 @@ import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 import type { CompositeNavigationProp } from "@react-navigation/native";
 import { useNavigation } from "@react-navigation/native";
 import type { StackNavigationProp } from "@react-navigation/stack";
-import { FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+    FlatList,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { colors, radii, shadows } from "../constants/theme";
@@ -44,7 +50,9 @@ export function ProfileScreen() {
 
       <View style={styles.userCard}>
         <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{(user?.displayName ?? "?").slice(0, 1).toUpperCase()}</Text>
+          <Text style={styles.avatarText}>
+            {(user?.displayName ?? "?").slice(0, 1).toUpperCase()}
+          </Text>
         </View>
         <View style={{ flex: 1 }}>
           <Text style={styles.name}>{user?.displayName ?? "Traveler"}</Text>
@@ -60,31 +68,53 @@ export function ProfileScreen() {
       <FlatList
         data={saved}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={saved.length === 0 ? styles.emptyList : styles.list}
+        contentContainerStyle={
+          saved.length === 0 ? styles.emptyList : styles.list
+        }
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Ionicons name="images-outline" size={40} color={colors.textSecondary} />
+            <Ionicons
+              name="images-outline"
+              size={40}
+              color={colors.textSecondary}
+            />
             <Text style={styles.emptyTitle}>No saves yet</Text>
-            <Text style={styles.emptyText}>Scan a site from the camera tab and tap Save.</Text>
+            <Text style={styles.emptyText}>
+              Scan a site from the camera tab and tap Save.
+            </Text>
           </View>
         }
         renderItem={({ item }) => (
-          <TouchableOpacity style={styles.row} onPress={() => openLandmark(item)} activeOpacity={0.9}>
+          <TouchableOpacity
+            style={styles.row}
+            onPress={() => openLandmark(item)}
+            activeOpacity={0.9}
+          >
             <View style={styles.rowIcon}>
               <Ionicons name="location" size={20} color={colors.primary} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.rowTitle}>{item.name}</Text>
-              <Text style={styles.rowSub}>{item.category} · {item.confidence}% confidence</Text>
+              <Text style={styles.rowSub}>
+                {item.category} · {item.confidence}% confidence
+              </Text>
             </View>
-            <TouchableOpacity onPress={() => removeLandmark(item.id)} hitSlop={12}>
+            <TouchableOpacity
+              onPress={() => removeLandmark(item.id)}
+              hitSlop={12}
+            >
               <Ionicons name="trash-outline" size={22} color={colors.danger} />
             </TouchableOpacity>
           </TouchableOpacity>
         )}
       />
 
-      <PrimaryButton title="Sign out" variant="outline" onPress={logout} style={styles.signOut} />
+      <PrimaryButton
+        title="Sign out"
+        variant="outline"
+        onPress={logout}
+        style={styles.signOut}
+      />
     </SafeAreaView>
   );
 }
@@ -92,7 +122,12 @@ export function ProfileScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background, paddingHorizontal: 18 },
   headerRow: { marginBottom: 16 },
-  greeting: { fontSize: 14, color: colors.textSecondary, fontWeight: "600", marginBottom: 4 },
+  greeting: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    fontWeight: "600",
+    marginBottom: 4,
+  },
   pageTitle: { fontSize: 28, fontWeight: "900", color: colors.text },
   userCard: {
     flexDirection: "row",
@@ -101,7 +136,7 @@ const styles = StyleSheet.create({
     borderRadius: radii.lg,
     padding: 16,
     marginBottom: 22,
-    ...shadows.card,
+    ...shadows.elevated,
   },
   avatar: {
     width: 52,
@@ -114,7 +149,12 @@ const styles = StyleSheet.create({
   },
   avatarText: { fontSize: 22, fontWeight: "900", color: colors.primary },
   name: { fontSize: 18, fontWeight: "800", color: colors.text },
-  email: { marginTop: 4, fontSize: 14, color: colors.textSecondary, fontWeight: "600" },
+  email: {
+    marginTop: 4,
+    fontSize: 14,
+    color: colors.textSecondary,
+    fontWeight: "600",
+  },
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -151,7 +191,13 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   rowTitle: { fontSize: 16, fontWeight: "800", color: colors.text },
-  rowSub: { marginTop: 4, fontSize: 13, color: colors.textSecondary, fontWeight: "600", textTransform: "capitalize" },
+  rowSub: {
+    marginTop: 4,
+    fontSize: 13,
+    color: colors.textSecondary,
+    fontWeight: "600",
+    textTransform: "capitalize",
+  },
   empty: {
     flex: 1,
     alignItems: "center",
@@ -159,7 +205,17 @@ const styles = StyleSheet.create({
     paddingVertical: 48,
     paddingHorizontal: 12,
   },
-  emptyTitle: { marginTop: 12, fontSize: 18, fontWeight: "800", color: colors.text },
-  emptyText: { marginTop: 8, textAlign: "center", color: colors.textSecondary, lineHeight: 20 },
+  emptyTitle: {
+    marginTop: 12,
+    fontSize: 18,
+    fontWeight: "800",
+    color: colors.text,
+  },
+  emptyText: {
+    marginTop: 8,
+    textAlign: "center",
+    color: colors.textSecondary,
+    lineHeight: 20,
+  },
   signOut: { marginVertical: 16 },
 });

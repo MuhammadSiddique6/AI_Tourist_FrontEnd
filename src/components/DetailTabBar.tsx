@@ -1,5 +1,5 @@
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { colors, radii } from "../constants/theme";
+import { colors, radii, shadows } from "../constants/theme";
 
 export type DetailTab = "summary" | "etiquette" | "history";
 
@@ -48,7 +48,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderRadius: radii.sm,
   },
-  tabOn: { backgroundColor: colors.surface, ...{ shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 }, elevation: 2 } },
+  tabOn: { backgroundColor: colors.surface, ...shadows.soft },
   text: { fontSize: 13, fontWeight: "700", color: colors.textSecondary },
   textOn: { color: colors.primary },
 });

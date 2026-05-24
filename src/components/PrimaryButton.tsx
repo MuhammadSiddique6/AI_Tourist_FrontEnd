@@ -1,9 +1,9 @@
 import {
-  ActivityIndicator,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  type TouchableOpacityProps,
+    ActivityIndicator,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    type TouchableOpacityProps,
 } from "react-native";
 import { colors, radii, shadows } from "../constants/theme";
 
@@ -43,7 +43,9 @@ export function PrimaryButton({
           style={[
             styles.title,
             isPrimary ? styles.titleOnPrimary : null,
-            variant === "outline" || variant === "ghost" ? styles.titleMuted : null,
+            variant === "outline" || variant === "ghost"
+              ? styles.titleMuted
+              : null,
           ]}
         >
           {title}
@@ -57,15 +59,17 @@ const styles = StyleSheet.create({
   base: {
     borderRadius: radii.md,
     paddingVertical: 14,
+    paddingHorizontal: 16,
     alignItems: "center",
     justifyContent: "center",
-    ...shadows.soft,
+    ...shadows.elevated,
   },
   primary: { backgroundColor: colors.primary },
   outline: {
     backgroundColor: colors.surface,
-    borderWidth: 1.5,
+    borderWidth: 2,
     borderColor: colors.primary,
+    ...shadows.soft,
   },
   ghost: { backgroundColor: "transparent", elevation: 0, shadowOpacity: 0 },
   disabled: { opacity: 0.55 },

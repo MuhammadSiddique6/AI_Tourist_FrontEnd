@@ -15,7 +15,7 @@ import { PrimaryButton } from "../components/PrimaryButton";
 import { TextField } from "../components/TextField";
 import { colors, radii, shadows } from "../constants/theme";
 import { useAuth } from "../context/AuthContext";
-import { passwordMatches } from "../services/mockCredentialStore";
+import api from "../services/api";
 import { validateLogin } from "../services/validation";
 import type { AuthStackParamList } from "../types/navigation";
 
@@ -33,18 +33,29 @@ export function LoginScreen() {
     const next = validateLogin({ email, password });
     setErrors(next);
     if (Object.keys(next).length > 0) return;
-    if (!passwordMatches(email.trim().toLowerCase(), password)) {
-      setErrors({ password: "Incorrect password. Reset it if you forgot." });
-      return;
-    }
     setSubmitting(true);
-    setTimeout(() => {
-      login({
-        email: email.trim().toLowerCase(),
-        displayName: email.trim().split("@")[0] || "Traveler",
-      });
-      setSubmitting(false);
-    }, 400);
+    api.auth
+      .login(email.trim().toLowerCase(), password)
+      .then((res) => {
+        // Expecting { user: { email, name }, token }
+        const token = res.token ?? null;
+        const backendUser = res.user ?? null;
+        const user = backendUser
+          ? {
+              email: backendUser.email,
+              displayName: backendUser.name ?? backendUser.displayName,
+            }
+          : {
+              email: email.trim().toLowerCase(),
+              displayName: email.split("@")[0],
+            };
+        login(user, token);
+      })
+      .catch((err) => {
+        const msg = err?.message || "Login failed";
+        setErrors({ password: msg });
+      })
+      .finally(() => setSubmitting(false));
   };
 
   return (
@@ -62,8 +73,8 @@ export function LoginScreen() {
             <Text style={styles.kicker}>AI-Based Tourist Companion</Text>
             <Text style={styles.title}>Cultural awareness, in your pocket</Text>
             <Text style={styles.sub}>
-              Scan landmarks, hear stories, translate on the go, and explore nearby heritage—offline
-              ready when you need it.
+              Scan landmarks, hear stories, translate on the go, and explore
+              nearby heritage—offline ready when you need it.
             </Text>
           </View>
 
@@ -94,8 +105,16 @@ export function LoginScreen() {
                 <Text style={styles.forgot}>Forgot password?</Text>
               </TouchableOpacity>
             </View>
-            <PrimaryButton title="Sign in" onPress={onSubmit} loading={submitting} style={styles.mt} />
-            <TouchableOpacity style={styles.linkRow} onPress={() => navigation.navigate("Register")}>
+            <PrimaryButton
+              title="Sign in"
+              onPress={onSubmit}
+              loading={submitting}
+              style={styles.mt}
+            />
+            <TouchableOpacity
+              style={styles.linkRow}
+              onPress={() => navigation.navigate("Register")}
+            >
               <Text style={styles.linkMuted}>New here?</Text>
               <Text style={styles.link}> Create an account</Text>
             </TouchableOpacity>
@@ -119,7 +138,12 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     fontSize: 13,
   },
-  title: { fontSize: 28, fontWeight: "900", color: colors.text, marginBottom: 10 },
+  title: {
+    fontSize: 28,
+    fontWeight: "900",
+    color: colors.text,
+    marginBottom: 10,
+  },
   sub: { fontSize: 15, lineHeight: 22, color: colors.textSecondary },
   card: {
     backgroundColor: colors.surface,
@@ -127,7 +151,12 @@ const styles = StyleSheet.create({
     padding: 22,
     ...shadows.card,
   },
-  cardTitle: { fontSize: 20, fontWeight: "800", color: colors.text, marginBottom: 8 },
+  cardTitle: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: colors.text,
+    marginBottom: 8,
+  },
   /** Above the primary button so Android elevation on the button cannot paint over this link. */
   forgotRow: {
     width: "100%",

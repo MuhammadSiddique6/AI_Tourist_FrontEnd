@@ -5,20 +5,20 @@ import type { StackNavigationProp } from "@react-navigation/stack";
 import { Image } from "expo-image";
 import { useMemo, useState } from "react";
 import {
-  Alert,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Alert,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { DetailTabBar, type DetailTab } from "../components/DetailTabBar";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { colors, radii, shadows } from "../constants/theme";
 import { useSavedLandmarks } from "../context/SavedLandmarksContext";
-import { speakLandmarkSummary, stopSpeaking } from "../services/ttsService";
 import { mockTranslateLandmark } from "../services/translateMock";
+import { speakLandmarkSummary, stopSpeaking } from "../services/ttsService";
 import type { AppStackParamList } from "../types/navigation";
 
 type Route = RouteProp<AppStackParamList, "Detail">;
@@ -50,19 +50,28 @@ export function DetailScreen() {
     saveLandmark(landmark);
     Alert.alert(
       "Download (mock)",
-      "An offline audio and text bundle for this landmark would be saved to your device."
+      "An offline audio and text bundle for this landmark would be saved to your device.",
     );
   };
 
-  const distKm = (landmark.distanceMeters / 1000).toFixed(landmark.distanceMeters >= 1000 ? 1 : 2);
+  const distKm = (landmark.distanceMeters / 1000).toFixed(
+    landmark.distanceMeters >= 1000 ? 1 : 2,
+  );
 
   return (
     <View style={styles.root}>
       <View style={styles.header}>
-        <Image source={{ uri: landmark.imageUri }} style={styles.headerImage} contentFit="cover" />
+        <Image
+          source={{ uri: landmark.imageUri }}
+          style={styles.headerImage}
+          contentFit="cover"
+        />
         <View style={styles.headerFade} />
         <SafeAreaView edges={["top"]} style={styles.headerSafe}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+          <TouchableOpacity
+            style={styles.backBtn}
+            onPress={() => navigation.goBack()}
+          >
             <Ionicons name="chevron-back" size={26} color="#fff" />
           </TouchableOpacity>
           <View style={styles.headerTextBlock}>
@@ -78,7 +87,10 @@ export function DetailScreen() {
         </SafeAreaView>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+      >
         <DetailTabBar active={tab} onChange={setTab} />
 
         <View style={styles.card}>
@@ -86,9 +98,23 @@ export function DetailScreen() {
         </View>
 
         <View style={styles.actions}>
-          <PrimaryButton title="Listen" onPress={listen} style={styles.actionBtn} />
-          <PrimaryButton title="Translate" variant="outline" onPress={translate} style={styles.actionBtn} />
-          <PrimaryButton title="Download" variant="outline" onPress={download} style={styles.actionBtn} />
+          <PrimaryButton
+            title="Listen"
+            onPress={listen}
+            style={styles.actionBtn}
+          />
+          <PrimaryButton
+            title="Translate"
+            variant="outline"
+            onPress={translate}
+            style={styles.actionBtn}
+          />
+          <PrimaryButton
+            title="Download"
+            variant="outline"
+            onPress={download}
+            style={styles.actionBtn}
+          />
         </View>
 
         {isSaved(landmark.id) ? (
@@ -107,7 +133,11 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "rgba(0,0,0,0.35)",
   },
-  headerSafe: { flex: 1, paddingHorizontal: 12, justifyContent: "space-between" },
+  headerSafe: {
+    flex: 1,
+    paddingHorizontal: 12,
+    justifyContent: "space-between",
+  },
   backBtn: {
     width: 44,
     height: 44,
@@ -119,14 +149,19 @@ const styles = StyleSheet.create({
   },
   headerTextBlock: { paddingBottom: 18, paddingHorizontal: 8 },
   title: { color: "#fff", fontSize: 26, fontWeight: "900" },
-  distance: { color: "rgba(255,255,255,0.9)", marginTop: 6, fontSize: 14, fontWeight: "600" },
+  distance: {
+    color: "rgba(255,255,255,0.9)",
+    marginTop: 6,
+    fontSize: 14,
+    fontWeight: "600",
+  },
   scroll: { padding: 18, paddingBottom: 36 },
   card: {
     backgroundColor: colors.surface,
     borderRadius: radii.lg,
     padding: 18,
     marginBottom: 18,
-    ...shadows.card,
+    ...shadows.elevated,
   },
   cardBody: { fontSize: 16, lineHeight: 24, color: colors.text },
   actions: { gap: 10 },

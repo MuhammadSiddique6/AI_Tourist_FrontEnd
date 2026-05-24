@@ -2,20 +2,20 @@ import { useNavigation } from "@react-navigation/native";
 import type { StackNavigationProp } from "@react-navigation/stack";
 import { useState } from "react";
 import {
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { TextField } from "../components/TextField";
 import { colors, radii, shadows } from "../constants/theme";
 import { useAuth } from "../context/AuthContext";
-import { savePasswordForEmail } from "../services/mockCredentialStore";
+import api from "../services/api";
 import { validateRegister } from "../services/validation";
 import type { AuthStackParamList } from "../types/navigation";
 
@@ -35,15 +35,31 @@ export function RegisterScreen() {
     setErrors(next);
     if (Object.keys(next).length > 0) return;
     setSubmitting(true);
-    setTimeout(() => {
-      const key = email.trim().toLowerCase();
-      savePasswordForEmail(key, password);
-      login({
-        email: key,
-        displayName: displayName.trim(),
-      });
-      setSubmitting(false);
-    }, 450);
+    api.auth
+      .register(displayName.trim(), email.trim().toLowerCase(), password)
+      .then(() => {
+        // Backend returns only a message on success; auto-login by calling login endpoint
+        return api.auth.login(email.trim().toLowerCase(), password);
+      })
+      .then((res) => {
+        const token = res.token ?? null;
+        const backendUser = res.user ?? null;
+        const user = backendUser
+          ? {
+              email: backendUser.email,
+              displayName: backendUser.name ?? displayName.trim(),
+            }
+          : {
+              email: email.trim().toLowerCase(),
+              displayName: displayName.trim(),
+            };
+        login(user, token);
+      })
+      .catch((err) => {
+        const msg = err?.message || "Registration failed";
+        setErrors({ password: msg });
+      })
+      .finally(() => setSubmitting(false));
   };
 
   return (
@@ -52,14 +68,22 @@ export function RegisterScreen() {
         style={styles.flex}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.back}>
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          keyboardShouldPersistTaps="handled"
+        >
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.back}
+          >
             <Text style={styles.backText}>← Back to sign in</Text>
           </TouchableOpacity>
 
           <View style={styles.hero}>
             <Text style={styles.title}>Create your traveler profile</Text>
-            <Text style={styles.sub}>Save favorite sites and keep scans organized.</Text>
+            <Text style={styles.sub}>
+              Save favorite sites and keep scans organized.
+            </Text>
           </View>
 
           <View style={styles.card}>
@@ -85,7 +109,12 @@ export function RegisterScreen() {
               onChangeText={setPassword}
               error={errors.password}
             />
-            <PrimaryButton title="Register" onPress={onSubmit} loading={submitting} style={styles.mt} />
+            <PrimaryButton
+              title="Register"
+              onPress={onSubmit}
+              loading={submitting}
+              style={styles.mt}
+            />
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -100,7 +129,12 @@ const styles = StyleSheet.create({
   back: { marginBottom: 16 },
   backText: { color: colors.primary, fontWeight: "700", fontSize: 15 },
   hero: { marginBottom: 18 },
-  title: { fontSize: 24, fontWeight: "900", color: colors.text, marginBottom: 8 },
+  title: {
+    fontSize: 24,
+    fontWeight: "900",
+    color: colors.text,
+    marginBottom: 8,
+  },
   sub: { fontSize: 15, lineHeight: 22, color: colors.textSecondary },
   card: {
     backgroundColor: colors.surface,

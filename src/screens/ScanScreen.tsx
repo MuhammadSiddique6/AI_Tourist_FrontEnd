@@ -4,22 +4,25 @@ import type { CompositeNavigationProp } from "@react-navigation/native";
 import { useNavigation } from "@react-navigation/native";
 import type { StackNavigationProp } from "@react-navigation/stack";
 import { CameraView, useCameraPermissions } from "expo-camera";
+import * as ImagePicker from "expo-image-picker";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Animated,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Animated,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ResultCard } from "../components/ResultCard";
 import { ScannerOverlay } from "../components/ScannerOverlay";
-import { colors, radii } from "../constants/theme";
+import { colors, radii, shadows } from "../constants/theme";
 import { useSavedLandmarks } from "../context/SavedLandmarksContext";
+import { API_BASE_URL } from "../config";
 import { recognizeLandmarkMock } from "../services/mockLandmarkService";
+import api from "../services/api";
 import { mockTranslateLandmark } from "../services/translateMock";
 import { speakLandmarkSummary } from "../services/ttsService";
 import type { LandmarkRecognitionResult } from "../types/landmark";
@@ -42,9 +45,17 @@ export function ScanScreen() {
     if (!loading) return;
     const loop = Animated.loop(
       Animated.sequence([
-        Animated.timing(pulse, { toValue: 1.08, duration: 700, useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 1, duration: 700, useNativeDriver: true }),
-      ])
+        Animated.timing(pulse, {
+          toValue: 1.08,
+          duration: 700,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulse, {
+          toValue: 1,
+          duration: 700,
+          useNativeDriver: true,
+        }),
+      ]),
     );
     loop.start();
     return () => loop.stop();
@@ -54,8 +65,71 @@ export function ScanScreen() {
     setResult(null);
     setLoading(true);
     try {
-      const data = await recognizeLandmarkMock();
-      setResult(data);
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert("Camera permissions required", "Please allow camera access to scan landmarks.");
+        return;
+      }
+
+      const photo = await ImagePicker.launchCameraAsync({ quality: 0.7, base64: false });
+
+      // Handle different response shapes across SDKs:
+      // - older: { cancelled: boolean, uri: string }
+      // - newer: { assets: [{ uri }] }
+      let uri: string | undefined;
+      if (Object.prototype.hasOwnProperty.call(photo, "cancelled")) {
+        if ((photo as any).cancelled) return;
+        uri = (photo as any).uri;
+      } else if ((photo as any).assets && (photo as any).assets.length > 0) {
+        uri = (photo as any).assets[0].uri;
+      } else {
+        uri = (photo as any).uri;
+      }
+      if (!uri) return;
+
+      const file = { uri, name: "photo.jpg", type: "image/jpeg" };
+      const res = await api.ai.recognize(file);
+
+      // backend returns { prediction, landmark }
+      const landmark = res.landmark;
+      const prediction = res.prediction || {};
+
+      const label = prediction.prediction || prediction.label;
+      const confidence = prediction.confidence || prediction.score || 0;
+
+      if (!landmark) {
+        if (label && label !== "unknown") {
+          Alert.alert(
+            "Recognized",
+            res.message ||
+              `Detected "${String(label).replace(/_/g, " ")}" (${Math.round(confidence * 100)}% confidence), but it is not in the database yet.`,
+          );
+        } else {
+          Alert.alert("No landmark", res.message || "Could not recognize the landmark.");
+        }
+        return;
+      }
+
+      const mapped: LandmarkRecognitionResult = {
+        id: String(landmark.id),
+        name: landmark.name,
+        confidence: confidence || 0.9,
+        summary: landmark.description || "",
+        etiquette: "",
+        history: "",
+        coordinate: {
+          latitude: Number(landmark.latitude) || 0,
+          longitude: Number(landmark.longitude) || 0,
+        },
+        category: "nearby",
+        distanceMeters: 0,
+        imageUri: landmark.image_path ? `${API_BASE_URL}${landmark.image_path}` : "",
+        translatedPreview: "",
+      };
+
+      setResult(mapped);
+    } catch (err: any) {
+      Alert.alert("Scan error", err.message || String(err));
     } finally {
       setLoading(false);
     }
@@ -91,9 +165,13 @@ export function ScanScreen() {
       <SafeAreaView style={styles.permission}>
         <Text style={styles.permissionTitle}>Camera access</Text>
         <Text style={styles.permissionText}>
-          We use the camera to frame landmarks and run on-device style recognition in this demo.
+          We use the camera to frame landmarks and run on-device style
+          recognition in this demo.
         </Text>
-        <TouchableOpacity style={styles.permissionBtn} onPress={requestPermission}>
+        <TouchableOpacity
+          style={styles.permissionBtn}
+          onPress={requestPermission}
+        >
           <Text style={styles.permissionBtnText}>Allow camera</Text>
         </TouchableOpacity>
       </SafeAreaView>
@@ -119,7 +197,9 @@ export function ScanScreen() {
 
       {loading ? (
         <View style={styles.loadingWrap}>
-          <Animated.View style={[styles.loadingInner, { transform: [{ scale: pulse }] }]}>
+          <Animated.View
+            style={[styles.loadingInner, { transform: [{ scale: pulse }] }]}
+          >
             <ActivityIndicator size="large" color={colors.primary} />
             <Text style={styles.loadingLabel}>Recognizing landmark…</Text>
           </Animated.View>
@@ -137,11 +217,17 @@ export function ScanScreen() {
             saved={isSaved(result.id)}
           />
         ) : (
-          <Text style={styles.hint}>Tap the shutter to scan the framed area</Text>
+          <Text style={styles.hint}>
+            Tap the shutter to scan the framed area
+          </Text>
         )}
 
         <View style={styles.captureRow}>
-          <TouchableOpacity style={styles.captureOuter} onPress={onScan} activeOpacity={0.9}>
+          <TouchableOpacity
+            style={styles.captureOuter}
+            onPress={onScan}
+            activeOpacity={0.9}
+          >
             <View style={styles.captureInner} />
           </TouchableOpacity>
         </View>
@@ -173,10 +259,22 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: radii.pill,
     gap: 6,
-    ...{ shadowColor: "#000", shadowOpacity: 0.12, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 4 },
+    ...{
+      shadowColor: "#000",
+      shadowOpacity: 0.12,
+      shadowRadius: 8,
+      shadowOffset: { width: 0, height: 2 },
+      elevation: 4,
+    },
   },
   statusText: { fontSize: 13, fontWeight: "700", color: colors.text },
-  dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: colors.accent, marginLeft: 4 },
+  dot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: colors.accent,
+    marginLeft: 4,
+  },
   offline: { fontSize: 12, fontWeight: "700", color: colors.textSecondary },
   bottomArea: {
     position: "absolute",
@@ -230,13 +328,24 @@ const styles = StyleSheet.create({
     padding: 24,
     justifyContent: "center",
   },
-  permissionTitle: { fontSize: 22, fontWeight: "900", color: colors.text, marginBottom: 10 },
-  permissionText: { fontSize: 15, color: colors.textSecondary, lineHeight: 22, marginBottom: 20 },
+  permissionTitle: {
+    fontSize: 22,
+    fontWeight: "900",
+    color: colors.text,
+    marginBottom: 10,
+  },
+  permissionText: {
+    fontSize: 15,
+    color: colors.textSecondary,
+    lineHeight: 22,
+    marginBottom: 20,
+  },
   permissionBtn: {
     backgroundColor: colors.primary,
     paddingVertical: 14,
     borderRadius: radii.md,
     alignItems: "center",
+    ...shadows.elevated,
   },
   permissionBtnText: { color: "#fff", fontWeight: "800", fontSize: 16 },
 });

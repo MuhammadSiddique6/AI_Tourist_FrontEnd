@@ -1,8 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useRef } from "react";
-import { Animated, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import type { LandmarkRecognitionResult } from "../types/landmark";
+import {
+    Animated,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from "react-native";
 import { colors, radii, shadows } from "../constants/theme";
+import type { LandmarkRecognitionResult } from "../types/landmark";
 
 type Props = {
   result: LandmarkRecognitionResult;
@@ -13,7 +19,14 @@ type Props = {
   saved: boolean;
 };
 
-export function ResultCard({ result, onListen, onTranslate, onSave, onDetails, saved }: Props) {
+export function ResultCard({
+  result,
+  onListen,
+  onTranslate,
+  onSave,
+  onDetails,
+  saved,
+}: Props) {
   const opacity = useRef(new Animated.Value(0)).current;
   const scale = useRef(new Animated.Value(0.94)).current;
 
@@ -24,7 +37,11 @@ export function ResultCard({ result, onListen, onTranslate, onSave, onDetails, s
         duration: 280,
         useNativeDriver: true,
       }),
-      Animated.spring(scale, { toValue: 1, friction: 7, useNativeDriver: true }),
+      Animated.spring(scale, {
+        toValue: 1,
+        friction: 7,
+        useNativeDriver: true,
+      }),
     ]).start();
   }, [opacity, scale]);
 
@@ -43,21 +60,41 @@ export function ResultCard({ result, onListen, onTranslate, onSave, onDetails, s
       </View>
 
       <View style={styles.actions}>
-        <TouchableOpacity style={styles.actionBtn} onPress={onListen} activeOpacity={0.8}>
+        <TouchableOpacity
+          style={styles.actionBtn}
+          onPress={onListen}
+          activeOpacity={0.8}
+        >
           <Ionicons name="volume-high" size={20} color={colors.primary} />
           <Text style={styles.actionLabel}>Listen</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.actionBtn} onPress={onTranslate} activeOpacity={0.8}>
+        <TouchableOpacity
+          style={styles.actionBtn}
+          onPress={onTranslate}
+          activeOpacity={0.8}
+        >
           <Ionicons name="language" size={20} color={colors.primary} />
           <Text style={styles.actionLabel}>Translate</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.actionBtn} onPress={onSave} activeOpacity={0.8}>
-          <Ionicons name={saved ? "bookmark" : "bookmark-outline"} size={20} color={colors.primary} />
+        <TouchableOpacity
+          style={styles.actionBtn}
+          onPress={onSave}
+          activeOpacity={0.8}
+        >
+          <Ionicons
+            name={saved ? "bookmark" : "bookmark-outline"}
+            size={20}
+            color={colors.primary}
+          />
           <Text style={styles.actionLabel}>{saved ? "Saved" : "Save"}</Text>
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity style={styles.detailsBtn} onPress={onDetails} activeOpacity={0.9}>
+      <TouchableOpacity
+        style={styles.detailsBtn}
+        onPress={onDetails}
+        activeOpacity={0.9}
+      >
         <Text style={styles.detailsText}>View details</Text>
         <Ionicons name="chevron-forward" size={18} color={colors.primary} />
       </TouchableOpacity>
@@ -70,11 +107,20 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: radii.lg,
     padding: 18,
-    ...shadows.card,
+    ...shadows.elevated,
   },
-  headerRow: { flexDirection: "row", alignItems: "flex-start", marginBottom: 14 },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginBottom: 14,
+  },
   name: { fontSize: 20, fontWeight: "800", color: colors.text },
-  confidence: { marginTop: 4, fontSize: 14, color: colors.textSecondary, fontWeight: "600" },
+  confidence: {
+    marginTop: 4,
+    fontSize: 14,
+    color: colors.textSecondary,
+    fontWeight: "600",
+  },
   badge: {
     width: 40,
     height: 40,
@@ -92,10 +138,11 @@ const styles = StyleSheet.create({
   actionBtn: {
     flex: 1,
     alignItems: "center",
-    paddingVertical: 10,
+    paddingVertical: 12,
     marginHorizontal: 4,
-    borderRadius: radii.sm,
+    borderRadius: radii.md,
     backgroundColor: colors.primaryMuted,
+    ...shadows.soft,
   },
   actionLabel: {
     marginTop: 4,
@@ -113,5 +160,10 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     backgroundColor: colors.background,
   },
-  detailsText: { fontSize: 15, fontWeight: "700", color: colors.primary, marginRight: 4 },
+  detailsText: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: colors.primary,
+    marginRight: 4,
+  },
 });
