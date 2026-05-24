@@ -19,11 +19,11 @@ import { MapCategoryChips } from "../components/MapCategoryChips";
 import { colors, radii, shadows } from "../constants/theme";
 import { useLandmarks } from "../hooks/useLandmarks";
 import { useUserLocation } from "../hooks/useUserLocation";
-import { fetchNearbyHotels } from "../services/nearbyHotelsService";
 import {
   filterLandmarksByCategory,
   type MapFilterId,
 } from "../services/landmarkService";
+import { fetchNearbyHotels } from "../services/nearbyHotelsService";
 import type { NearbyHotel } from "../types/hotel";
 import type { Landmark } from "../types/landmark";
 import type { AppStackParamList, MainTabParamList } from "../types/navigation";
@@ -257,12 +257,7 @@ export function MapScreen() {
         )}
       </Pressable>
 
-      {userLocation && locationStatus === "granted" ? (
-        <View style={[styles.locationBanner, { top: 56 + insets.top }]}>
-          <Ionicons name="navigate" size={14} color={colors.primary} />
-          <Text style={styles.locationBannerText}>You are here</Text>
-        </View>
-      ) : null}
+      
 
       <View style={[styles.footer, { bottom: bottomPad }]}>
         <View style={styles.titlePill}>

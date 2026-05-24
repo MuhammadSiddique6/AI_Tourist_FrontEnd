@@ -1,21 +1,35 @@
 export const colors = {
-  background: "#F5F5F5",
+  background: "#F4F7F5",
   surface: "#FFFFFF",
   primary: "#2C6E49",
-  primaryMuted: "#4C956C",
-  accent: "#FFC857",
-  accentMuted: "#FFF3D4",
-  secondary: "#4C956C",
-  secondaryMuted: "#E8F5E9",
-  text: "#1E1E1E",
-  textSecondary: "#6B7280",
-  border: "#E5E7EB",
+  primaryDark: "#1F4D34",
+  primaryMuted: "#D8EDE1",
+  accent: "#E8A838",
+  accentDark: "#C8871E",
+  accentMuted: "#FFF4DC",
+  secondary: "#3B82A0",
+  secondaryMuted: "#E3F2F8",
+  tertiary: "#7C5CBF",
+  tertiaryMuted: "#EDE5FA",
+  coral: "#E07A5F",
+  coralMuted: "#FCE8E3",
+  text: "#1A2420",
+  textSecondary: "#5C6B66",
+  border: "#DDE5E1",
   danger: "#DC2626",
   success: "#10B981",
   successMuted: "#D1F7E5",
-  overlay: "rgba(30, 30, 30, 0.5)",
+  overlay: "rgba(26, 36, 32, 0.5)",
   scannerFrame: "rgba(255, 255, 255, 0.92)",
   tabInactive: "#9CA3AF",
+  gradientStart: "#E8F5EC",
+  gradientEnd: "#FFF8EB",
+  authGradientTop: "#D8EDE1",
+  authGradientBottom: "#FFF4DC",
+  homeGradientTop: "#E3F2F8",
+  profileGradientTop: "#EDE5FA",
+  adminGradientTop: "#EDE5FA",
+  adminGradientBottom: "#FCE8E3",
 };
 
 export const radii = {
@@ -27,21 +41,21 @@ export const radii = {
 
 export const shadows = {
   card: {
-    shadowColor: "#2C6E49",
+    shadowColor: colors.primaryDark,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.12,
     shadowRadius: 16,
     elevation: 8,
   },
   soft: {
-    shadowColor: "#1E1E1E",
+    shadowColor: colors.text,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 3,
   },
   elevated: {
-    shadowColor: "#2C6E49",
+    shadowColor: colors.primaryDark,
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.15,
     shadowRadius: 20,
@@ -53,4 +67,13 @@ export const animations = {
   pressOpacity: 0.8,
   mediumDuration: 300,
   quickDuration: 200,
+};
+
+/** Accent colors for category chips and action cards */
+export const accentPalette = {
+  scan: { bg: colors.primaryMuted, fg: colors.primary, border: colors.primary },
+  map: { bg: colors.accentMuted, fg: colors.accentDark, border: colors.accent },
+  saved: { bg: colors.tertiaryMuted, fg: colors.tertiary, border: colors.tertiary },
+  explore: { bg: colors.secondaryMuted, fg: colors.secondary, border: colors.secondary },
+  highlight: { bg: colors.coralMuted, fg: colors.coral, border: colors.coral },
 };

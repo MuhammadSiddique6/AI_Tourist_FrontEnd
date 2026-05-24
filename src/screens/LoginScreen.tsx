@@ -13,9 +13,11 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { AppLogo } from "../components/AppLogo";
 import { PrimaryButton } from "../components/PrimaryButton";
+import { ScreenBackground } from "../components/ScreenBackground";
 import { TextField } from "../components/TextField";
-import { colors, radii, shadows } from "../constants/theme";
+import { accentPalette, colors, radii, shadows } from "../constants/theme";
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
 import { validateLogin } from "../services/validation";
@@ -78,28 +80,32 @@ export function LoginScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={KEYBOARD_OFFSET}
-      >
-        <ScrollView
-          contentContainerStyle={styles.scroll}
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="on-drag"
-          showsVerticalScrollIndicator={false}
+    <ScreenBackground variant="auth">
+      <SafeAreaView style={styles.safe}>
+        <KeyboardAvoidingView
+          style={styles.flex}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={KEYBOARD_OFFSET}
         >
-          <View style={styles.hero}>
-            <Text style={styles.kicker}>AI-Based Tourist Companion</Text>
-            <Text style={styles.title}>Cultural awareness, in your pocket</Text>
-            <Text style={styles.sub}>
-              Scan landmarks, hear stories, translate on the go, and explore
-              nearby heritage—offline ready when you need it.
-            </Text>
-          </View>
+          <ScrollView
+            contentContainerStyle={styles.scroll}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={styles.logoWrap}>
+              <AppLogo size="hero" />
+            </View>
+            <View style={styles.hero}>
+              <Text style={styles.kicker}>AI-Based Tourist Companion</Text>
+              <Text style={styles.title}>Cultural awareness, in your pocket</Text>
+              <Text style={styles.sub}>
+                Scan landmarks, hear stories, translate on the go, and explore
+                nearby heritage—offline ready when you need it.
+              </Text>
+            </View>
 
-          <View style={styles.card}>
+            <View style={[styles.card, { borderTopColor: accentPalette.scan.border }]}>
             <Text style={styles.cardTitle}>Welcome back</Text>
             <TextField
               label="Email"
@@ -158,14 +164,15 @@ export function LoginScreen() {
               <Text style={styles.link}> Create an account</Text>
             </TouchableOpacity>
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </ScreenBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background },
+  safe: { flex: 1 },
   flex: { flex: 1 },
   scroll: {
     flexGrow: 1,
@@ -173,6 +180,7 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
     justifyContent: "center",
   },
+  logoWrap: { alignItems: "center", marginBottom: 20 },
   hero: { marginBottom: 22 },
   kicker: {
     color: colors.primary,
@@ -192,6 +200,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: radii.lg,
     padding: 22,
+    borderTopWidth: 4,
     ...shadows.card,
   },
   cardTitle: {

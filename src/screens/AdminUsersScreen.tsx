@@ -14,6 +14,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { ScreenBackground } from "../components/ScreenBackground";
 import { colors, radii, shadows } from "../constants/theme";
 import { useAuth } from "../context/AuthContext";
 import {
@@ -249,6 +250,7 @@ export function AdminUsersScreen() {
   };
 
   return (
+    <ScreenBackground variant="admin">
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <View style={styles.header}>
         {navigation.canGoBack() ? (
@@ -337,11 +339,12 @@ export function AdminUsersScreen() {
         />
       ) : null}
     </SafeAreaView>
+    </ScreenBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background },
+  safe: { flex: 1 },
   header: {
     flexDirection: "row",
     alignItems: "center",

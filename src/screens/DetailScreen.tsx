@@ -5,20 +5,20 @@ import type { StackNavigationProp } from "@react-navigation/stack";
 import { Image } from "expo-image";
 import { useMemo, useState } from "react";
 import {
-    Alert,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { DetailTabBar, type DetailTab } from "../components/DetailTabBar";
 import { PrimaryButton } from "../components/PrimaryButton";
+import { normalizeLandmarkKey } from "../constants/landmarkImages";
+import { hasLandmarkModel } from "../constants/landmarkModels";
 import { colors, radii, shadows } from "../constants/theme";
 import { useSavedLandmarks } from "../context/SavedLandmarksContext";
-import { hasLandmarkModel } from "../constants/landmarkModels";
-import { normalizeLandmarkKey } from "../constants/landmarkImages";
 import { getLandmarkImageSource } from "../services/landmarkService";
 import { mockTranslateLandmark } from "../services/translateMock";
 import { speakLandmarkSummary, stopSpeaking } from "../services/ttsService";
@@ -36,8 +36,7 @@ export function DetailScreen() {
 
   const body = useMemo(() => {
     if (tab === "summary") return landmark.summary;
-    if (tab === "etiquette") return landmark.etiquette;
-    return landmark.history;
+    return landmark.summary;
   }, [landmark, tab]);
 
   const listen = () => {
@@ -52,7 +51,7 @@ export function DetailScreen() {
   const download = () => {
     saveLandmark(landmark);
     Alert.alert(
-      "Download (mock)",
+      "Download",
       "An offline audio and text bundle for this landmark would be saved to your device.",
     );
   };
@@ -119,24 +118,28 @@ export function DetailScreen() {
           {canView3D ? (
             <PrimaryButton
               title="View 3D Model"
+              colorVariant="tertiary"
               onPress={open3DViewer}
               style={styles.actionBtn}
             />
           ) : null}
           <PrimaryButton
             title="Listen"
+            colorVariant="primary"
             onPress={listen}
             style={styles.actionBtn}
           />
           <PrimaryButton
             title="Translate"
             variant="outline"
+            colorVariant="accent"
             onPress={translate}
             style={styles.actionBtn}
           />
           <PrimaryButton
             title="Download"
             variant="outline"
+            colorVariant="secondary"
             onPress={download}
             style={styles.actionBtn}
           />
@@ -186,6 +189,8 @@ const styles = StyleSheet.create({
     borderRadius: radii.lg,
     padding: 18,
     marginBottom: 18,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.accent,
     ...shadows.elevated,
   },
   cardBody: { fontSize: 16, lineHeight: 24, color: colors.text },

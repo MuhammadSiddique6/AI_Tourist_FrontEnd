@@ -7,7 +7,7 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
-import { colors, radii, shadows } from "../constants/theme";
+import { accentPalette, colors, radii, shadows } from "../constants/theme";
 import type { LandmarkRecognitionResult } from "../types/landmark";
 
 type Props = {
@@ -54,39 +54,45 @@ export function ResultCard({
           </Text>
           <Text style={styles.confidence}>Confidence {result.confidence}%</Text>
         </View>
-        <View style={styles.badge}>
-          <Ionicons name="sparkles" size={18} color={colors.primary} />
+        <View style={[styles.badge, { backgroundColor: accentPalette.map.bg }]}>
+          <Ionicons name="sparkles" size={18} color={accentPalette.map.fg} />
         </View>
       </View>
 
       <View style={styles.actions}>
         <TouchableOpacity
-          style={styles.actionBtn}
+          style={[styles.actionBtn, { backgroundColor: accentPalette.scan.bg }]}
           onPress={onListen}
           activeOpacity={0.8}
         >
-          <Ionicons name="volume-high" size={20} color={colors.primary} />
-          <Text style={styles.actionLabel}>Listen</Text>
+          <Ionicons name="volume-high" size={20} color={accentPalette.scan.fg} />
+          <Text style={[styles.actionLabel, { color: accentPalette.scan.fg }]}>
+            Listen
+          </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={styles.actionBtn}
+          style={[styles.actionBtn, { backgroundColor: accentPalette.explore.bg }]}
           onPress={onTranslate}
           activeOpacity={0.8}
         >
-          <Ionicons name="language" size={20} color={colors.primary} />
-          <Text style={styles.actionLabel}>Translate</Text>
+          <Ionicons name="language" size={20} color={accentPalette.explore.fg} />
+          <Text style={[styles.actionLabel, { color: accentPalette.explore.fg }]}>
+            Translate
+          </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={styles.actionBtn}
+          style={[styles.actionBtn, { backgroundColor: accentPalette.saved.bg }]}
           onPress={onSave}
           activeOpacity={0.8}
         >
           <Ionicons
             name={saved ? "bookmark" : "bookmark-outline"}
             size={20}
-            color={colors.primary}
+            color={accentPalette.saved.fg}
           />
-          <Text style={styles.actionLabel}>{saved ? "Saved" : "Save"}</Text>
+          <Text style={[styles.actionLabel, { color: accentPalette.saved.fg }]}>
+            {saved ? "Saved" : "Save"}
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -107,6 +113,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: radii.lg,
     padding: 18,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.accent,
     ...shadows.elevated,
   },
   headerRow: {

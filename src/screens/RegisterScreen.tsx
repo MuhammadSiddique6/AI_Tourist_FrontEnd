@@ -13,9 +13,11 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { AppLogo } from "../components/AppLogo";
 import { PrimaryButton } from "../components/PrimaryButton";
+import { ScreenBackground } from "../components/ScreenBackground";
 import { TextField } from "../components/TextField";
-import { colors, radii, shadows } from "../constants/theme";
+import { accentPalette, colors, radii, shadows } from "../constants/theme";
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
 import { validateRegister } from "../services/validation";
@@ -81,6 +83,7 @@ export function RegisterScreen() {
   };
 
   return (
+    <ScreenBackground variant="auth">
     <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView
         style={styles.flex}
@@ -101,6 +104,9 @@ export function RegisterScreen() {
             <Text style={styles.backText}>← Back to sign in</Text>
           </TouchableOpacity>
 
+          <View style={styles.logoWrap}>
+            <AppLogo size="lg" />
+          </View>
           <View style={styles.hero}>
             <Text style={styles.title}>Create your traveler profile</Text>
             <Text style={styles.sub}>
@@ -108,7 +114,7 @@ export function RegisterScreen() {
             </Text>
           </View>
 
-          <View style={styles.card}>
+          <View style={[styles.card, { borderTopColor: accentPalette.explore.border }]}>
             <TextField
               label="Display name"
               autoComplete="name"
@@ -167,11 +173,13 @@ export function RegisterScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
+    </ScreenBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background },
+  safe: { flex: 1 },
+  logoWrap: { alignItems: "center", marginBottom: 16 },
   flex: { flex: 1 },
   scroll: {
     flexGrow: 1,
@@ -192,6 +200,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: radii.lg,
     padding: 22,
+    borderTopWidth: 4,
     ...shadows.card,
   },
   mt: { marginTop: 8 },

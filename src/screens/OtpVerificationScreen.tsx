@@ -13,10 +13,16 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { AppLogo } from "../components/AppLogo";
 import { PrimaryButton } from "../components/PrimaryButton";
+import { ScreenBackground } from "../components/ScreenBackground";
 import { TextField } from "../components/TextField";
-import { colors, radii, shadows } from "../constants/theme";
-import api from "../services/api";
+import { accentPalette, colors, radii, shadows } from "../constants/theme";
+import {
+  isPasswordResetMockActive,
+  resendPasswordResetOtp,
+  verifyOtpForReset,
+} from "../services/passwordResetService";
 import { validateOtpInput } from "../services/validation";
 import type { AuthStackParamList } from "../types/navigation";
 
@@ -36,21 +42,26 @@ export function OtpVerificationScreen() {
     const next = validateOtpInput(otp);
     setErrors(next);
     if (Object.keys(next).length > 0) return;
-    setLoading(true);
-    // Backend validates OTP as part of the reset step; just navigate and pass the code through.
-    setLoading(false);
+
+    if (!verifyOtpForReset(email, otp)) {
+      setErrors({ otp: "Invalid or expired code. Try resend or request a new one." });
+      return;
+    }
+
     navigation.navigate("ResetPassword", { email, otp_code: otp });
   };
 
   const onResend = async () => {
     setResendLoading(true);
     try {
-      const res = await api.auth.resendOtp(email);
-      const code = (res && (res.code || res.otp)) ?? null;
+      const { code } = await resendPasswordResetOtp(email);
+      const mockHint = isPasswordResetMockActive()
+        ? "\n\n(Offline demo — code shown below.)"
+        : "";
       Alert.alert(
         "Code sent again",
         code
-          ? `A new 6-digit code was sent to:\n${email}\n\n—\nDemo: your new code is ${code}.`
+          ? `A new 6-digit code was sent to:\n${email}${mockHint}\n\n—\nYour code is ${code}.`
           : `A new 6-digit code was sent to:\n${email}`,
       );
     } finally {
@@ -59,6 +70,7 @@ export function OtpVerificationScreen() {
   };
 
   return (
+    <ScreenBackground variant="auth">
     <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView
         style={styles.flex}
@@ -75,6 +87,9 @@ export function OtpVerificationScreen() {
             <Text style={styles.backText}>← Use a different email</Text>
           </TouchableOpacity>
 
+          <View style={styles.logoWrap}>
+            <AppLogo size="md" />
+          </View>
           <View style={styles.hero}>
             <Text style={styles.title}>Check your email</Text>
             <Text style={styles.sub}>
@@ -87,7 +102,7 @@ export function OtpVerificationScreen() {
             </Text>
           </View>
 
-          <View style={styles.card}>
+          <View style={[styles.card, { borderTopColor: accentPalette.saved.border }]}>
             <TextField
               label="6-digit code from email"
               keyboardType="number-pad"
@@ -115,11 +130,13 @@ export function OtpVerificationScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
+    </ScreenBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background },
+  safe: { flex: 1 },
+  logoWrap: { alignItems: "center", marginBottom: 16 },
   flex: { flex: 1 },
   scroll: { padding: 22, paddingBottom: 40 },
   back: { marginBottom: 16 },
@@ -143,6 +160,7 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.surface,
     borderRadius: radii.lg,
+    borderTopWidth: 4,
     padding: 22,
     ...shadows.card,
   },

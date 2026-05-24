@@ -9,12 +9,20 @@ import type { MainTabParamList } from "../types/navigation";
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
+const TAB_ACTIVE_COLORS: Record<keyof MainTabParamList, string> = {
+  Home: colors.primary,
+  Scan: colors.accentDark,
+  Map: colors.secondary,
+  Profile: colors.tertiary,
+};
+
 export function MainTabNavigator() {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarActiveTintColor: colors.primary,
+        tabBarActiveTintColor:
+          TAB_ACTIVE_COLORS[route.name as keyof MainTabParamList],
         tabBarInactiveTintColor: colors.tabInactive,
         tabBarStyle: {
           backgroundColor: colors.surface,
@@ -22,6 +30,11 @@ export function MainTabNavigator() {
           height: 62,
           paddingBottom: 8,
           paddingTop: 6,
+          shadowColor: colors.primaryDark,
+          shadowOffset: { width: 0, height: -4 },
+          shadowOpacity: 0.08,
+          shadowRadius: 12,
+          elevation: 12,
         },
         tabBarLabelStyle: { fontSize: 12, fontWeight: "700" },
         tabBarIcon: ({ color, size }) => {

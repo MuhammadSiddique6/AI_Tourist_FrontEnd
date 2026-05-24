@@ -7,28 +7,43 @@ import {
 } from "react-native";
 import { colors, radii, shadows } from "../constants/theme";
 
+type ColorVariant = "primary" | "accent" | "secondary" | "tertiary" | "coral";
+
 type Props = TouchableOpacityProps & {
   title: string;
   variant?: "primary" | "outline" | "ghost";
+  colorVariant?: ColorVariant;
   loading?: boolean;
+};
+
+const FILLS: Record<ColorVariant, string> = {
+  primary: colors.primary,
+  accent: colors.accentDark,
+  secondary: colors.secondary,
+  tertiary: colors.tertiary,
+  coral: colors.coral,
 };
 
 export function PrimaryButton({
   title,
   variant = "primary",
+  colorVariant = "primary",
   loading,
   disabled,
   style,
   ...rest
 }: Props) {
-  const isPrimary = variant === "primary";
+  const isFilled = variant === "primary";
+  const fill = FILLS[colorVariant];
   return (
     <TouchableOpacity
       activeOpacity={0.85}
       style={[
         styles.base,
-        isPrimary ? styles.primary : null,
-        variant === "outline" ? styles.outline : null,
+        isFilled ? { backgroundColor: fill } : null,
+        variant === "outline"
+          ? [styles.outline, { borderColor: fill }]
+          : null,
         variant === "ghost" ? styles.ghost : null,
         (disabled || loading) && styles.disabled,
         style,
@@ -37,14 +52,14 @@ export function PrimaryButton({
       {...rest}
     >
       {loading ? (
-        <ActivityIndicator color={isPrimary ? "#fff" : colors.primary} />
+        <ActivityIndicator color={isFilled ? "#fff" : fill} />
       ) : (
         <Text
           style={[
             styles.title,
-            isPrimary ? styles.titleOnPrimary : null,
+            isFilled ? styles.titleOnPrimary : null,
             variant === "outline" || variant === "ghost"
-              ? styles.titleMuted
+              ? { color: fill }
               : null,
           ]}
         >
@@ -64,16 +79,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     ...shadows.elevated,
   },
-  primary: { backgroundColor: colors.primary },
   outline: {
     backgroundColor: colors.surface,
     borderWidth: 2,
-    borderColor: colors.primary,
     ...shadows.soft,
   },
   ghost: { backgroundColor: "transparent", elevation: 0, shadowOpacity: 0 },
   disabled: { opacity: 0.55 },
   title: { fontSize: 16, fontWeight: "700" },
   titleOnPrimary: { color: "#fff" },
-  titleMuted: { color: colors.primary },
 });

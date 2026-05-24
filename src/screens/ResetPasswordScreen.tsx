@@ -19,10 +19,12 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { AppLogo } from "../components/AppLogo";
 import { PrimaryButton } from "../components/PrimaryButton";
+import { ScreenBackground } from "../components/ScreenBackground";
 import { TextField } from "../components/TextField";
-import { colors, radii, shadows } from "../constants/theme";
-import api from "../services/api";
+import { accentPalette, colors, radii, shadows } from "../constants/theme";
+import { completePasswordReset } from "../services/passwordResetService";
 import { validatePasswordReset } from "../services/validation";
 import type { AuthStackParamList } from "../types/navigation";
 
@@ -59,8 +61,7 @@ export function ResetPasswordScreen() {
     setErrors(next);
     if (Object.keys(next).length > 0) return;
     setSubmitting(true);
-    api.auth
-      .resetPassword(email, params.otp_code ?? "", password)
+    completePasswordReset(email, params.otp_code ?? "", password)
       .then(() => {
         setSubmitting(false);
         navigation.dispatch(
@@ -79,6 +80,7 @@ export function ResetPasswordScreen() {
   };
 
   return (
+    <ScreenBackground variant="auth">
     <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView
         style={styles.flex}
@@ -98,12 +100,15 @@ export function ResetPasswordScreen() {
             <Text style={styles.backText}>← Back to code</Text>
           </TouchableOpacity>
 
+          <View style={styles.logoWrap}>
+            <AppLogo size="md" />
+          </View>
           <View style={styles.hero}>
             <Text style={styles.title}>Create new password</Text>
             <Text style={styles.sub}>Choose a strong password for {email}</Text>
           </View>
 
-          <View style={styles.card}>
+          <View style={[styles.card, { borderTopColor: accentPalette.highlight.border }]}>
             <TextField
               label="New password"
               isPassword
@@ -138,11 +143,13 @@ export function ResetPasswordScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
+    </ScreenBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background },
+  safe: { flex: 1 },
+  logoWrap: { alignItems: "center", marginBottom: 16 },
   flex: { flex: 1 },
   scroll: { padding: 22, paddingBottom: 40 },
   back: { marginBottom: 16 },
@@ -158,6 +165,7 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.surface,
     borderRadius: radii.lg,
+    borderTopWidth: 4,
     padding: 22,
     ...shadows.card,
   },

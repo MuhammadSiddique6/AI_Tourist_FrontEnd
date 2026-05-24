@@ -12,7 +12,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { PrimaryButton } from "../components/PrimaryButton";
-import { colors, radii, shadows } from "../constants/theme";
+import { ScreenBackground } from "../components/ScreenBackground";
+import { accentPalette, colors, radii, shadows } from "../constants/theme";
 import { useAuth } from "../context/AuthContext";
 import { isAdminUser } from "../types/auth";
 import { useSavedLandmarks } from "../context/SavedLandmarksContext";
@@ -47,6 +48,7 @@ export function ProfileScreen() {
   const showAdmin = isAdminUser(user);
 
   return (
+    <ScreenBackground variant="profile">
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <View style={styles.headerRow}>
         <View>
@@ -55,9 +57,9 @@ export function ProfileScreen() {
         </View>
       </View>
 
-      <View style={styles.userCard}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>
+      <View style={[styles.userCard, { borderLeftColor: accentPalette.saved.border }]}>
+        <View style={[styles.avatar, { backgroundColor: colors.tertiaryMuted }]}>
+          <Text style={[styles.avatarText, { color: colors.tertiary }]}>
             {(user?.displayName ?? "?").slice(0, 1).toUpperCase()}
           </Text>
         </View>
@@ -69,12 +71,12 @@ export function ProfileScreen() {
 
       {showAdmin ? (
         <TouchableOpacity
-          style={styles.adminCard}
+          style={[styles.adminCard, { borderLeftColor: accentPalette.highlight.border }]}
           onPress={openAdmin}
           activeOpacity={0.9}
         >
-          <View style={styles.adminIcon}>
-            <Ionicons name="shield-checkmark" size={22} color={colors.primary} />
+          <View style={[styles.adminIcon, { backgroundColor: colors.coralMuted }]}>
+            <Ionicons name="shield-checkmark" size={22} color={colors.coral} />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.adminTitle}>Admin panel</Text>
@@ -108,14 +110,22 @@ export function ProfileScreen() {
             </Text>
           </View>
         }
-        renderItem={({ item }) => (
+        renderItem={({ item, index }) => {
+          const accents = [
+            accentPalette.scan,
+            accentPalette.map,
+            accentPalette.explore,
+            accentPalette.saved,
+          ];
+          const accent = accents[index % accents.length];
+          return (
           <TouchableOpacity
-            style={styles.row}
+            style={[styles.row, { borderLeftColor: accent.border }]}
             onPress={() => openLandmark(item)}
             activeOpacity={0.9}
           >
-            <View style={styles.rowIcon}>
-              <Ionicons name="location" size={20} color={colors.primary} />
+            <View style={[styles.rowIcon, { backgroundColor: accent.bg }]}>
+              <Ionicons name="location" size={20} color={accent.fg} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.rowTitle}>{item.name}</Text>
@@ -130,7 +140,8 @@ export function ProfileScreen() {
               <Ionicons name="trash-outline" size={22} color={colors.danger} />
             </TouchableOpacity>
           </TouchableOpacity>
-        )}
+        );
+        }}
       />
 
       <PrimaryButton
@@ -140,11 +151,12 @@ export function ProfileScreen() {
         style={styles.signOut}
       />
     </SafeAreaView>
+    </ScreenBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background, paddingHorizontal: 18 },
+  safe: { flex: 1, paddingHorizontal: 18 },
   headerRow: { marginBottom: 16 },
   greeting: {
     fontSize: 14,
@@ -158,6 +170,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: colors.surface,
     borderRadius: radii.lg,
+    borderLeftWidth: 4,
     padding: 16,
     marginBottom: 14,
     ...shadows.elevated,
@@ -167,10 +180,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: colors.surface,
     borderRadius: radii.lg,
+    borderLeftWidth: 4,
     padding: 16,
     marginBottom: 22,
-    borderWidth: 1.5,
-    borderColor: colors.primaryMuted,
     ...shadows.elevated,
   },
   adminIcon: {
@@ -229,6 +241,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: colors.surface,
     borderRadius: radii.md,
+    borderLeftWidth: 4,
     padding: 14,
     ...shadows.soft,
   },

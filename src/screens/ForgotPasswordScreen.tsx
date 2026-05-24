@@ -12,10 +12,15 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { AppLogo } from "../components/AppLogo";
 import { PrimaryButton } from "../components/PrimaryButton";
+import { ScreenBackground } from "../components/ScreenBackground";
 import { TextField } from "../components/TextField";
-import { colors, radii, shadows } from "../constants/theme";
-import api from "../services/api";
+import { accentPalette, colors, radii, shadows } from "../constants/theme";
+import {
+  isPasswordResetMockActive,
+  requestPasswordResetOtp,
+} from "../services/passwordResetService";
 import { validateForgotEmail } from "../services/validation";
 import type { AuthStackParamList } from "../types/navigation";
 
@@ -36,13 +41,14 @@ export function ForgotPasswordScreen() {
     const key = email.trim().toLowerCase();
     setLoading(true);
     try {
-      const res = await api.auth.forgotPassword(key);
-      // Backend may return code for demo; in production it won't
-      const code = (res && (res.code || res.otp)) ?? null;
+      const { code } = await requestPasswordResetOtp(key);
+      const mockHint = isPasswordResetMockActive()
+        ? "\n\n(Backend offline — using demo code below.)"
+        : "";
       Alert.alert(
         "Check your email",
         code
-          ? `A 6-digit verification code was sent to:\n${key}\n\n—\nDemo: Your code is ${code}.`
+          ? `A 6-digit verification code was sent to:\n${key}${mockHint}\n\n—\nYour code is ${code}.`
           : `A 6-digit verification code was sent to:\n${key}`,
         [
           {
@@ -61,6 +67,7 @@ export function ForgotPasswordScreen() {
   };
 
   return (
+    <ScreenBackground variant="auth">
     <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView
         style={styles.flex}
@@ -77,6 +84,9 @@ export function ForgotPasswordScreen() {
             <Text style={styles.backText}>← Back to sign in</Text>
           </TouchableOpacity>
 
+          <View style={styles.logoWrap}>
+            <AppLogo size="md" />
+          </View>
           <View style={styles.hero}>
             <Text style={styles.title}>Forgot password</Text>
             <Text style={styles.sub}>
@@ -85,7 +95,7 @@ export function ForgotPasswordScreen() {
             </Text>
           </View>
 
-          <View style={styles.card}>
+          <View style={[styles.card, { borderTopColor: accentPalette.map.border }]}>
             <TextField
               label="Email address"
               keyboardType="email-address"
@@ -105,11 +115,13 @@ export function ForgotPasswordScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
+    </ScreenBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background },
+  safe: { flex: 1 },
+  logoWrap: { alignItems: "center", marginBottom: 16 },
   flex: { flex: 1 },
   scroll: { padding: 22, paddingBottom: 40 },
   back: { marginBottom: 16 },
@@ -125,6 +137,7 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.surface,
     borderRadius: radii.lg,
+    borderTopWidth: 4,
     padding: 22,
     ...shadows.card,
   },

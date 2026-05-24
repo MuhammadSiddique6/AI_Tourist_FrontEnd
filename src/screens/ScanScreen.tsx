@@ -16,7 +16,9 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { AppLogo } from "../components/AppLogo";
 import { ResultCard } from "../components/ResultCard";
+import { ScreenBackground } from "../components/ScreenBackground";
 import { ScannerOverlay } from "../components/ScannerOverlay";
 import { colors, radii, shadows } from "../constants/theme";
 import { useSavedLandmarks } from "../context/SavedLandmarksContext";
@@ -152,19 +154,23 @@ export function ScanScreen() {
 
   if (!permission.granted) {
     return (
-      <SafeAreaView style={styles.permission}>
-        <Text style={styles.permissionTitle}>Camera access</Text>
-        <Text style={styles.permissionText}>
-          We use the camera to frame landmarks and run on-device style
-          recognition in this demo.
-        </Text>
-        <TouchableOpacity
-          style={styles.permissionBtn}
-          onPress={requestPermission}
-        >
-          <Text style={styles.permissionBtnText}>Allow camera</Text>
-        </TouchableOpacity>
-      </SafeAreaView>
+      <ScreenBackground variant="default">
+        <SafeAreaView style={styles.permission}>
+          <AppLogo size="lg" style={{ alignSelf: "center", marginBottom: 24 }} />
+          <Text style={styles.permissionTitle}>Camera access</Text>
+          <Text style={styles.permissionText}>
+            We use the camera to frame landmarks and run on-device style
+            recognition in this demo.
+          </Text>
+          <TouchableOpacity
+            style={styles.permissionBtn}
+            onPress={requestPermission}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.permissionBtnText}>Allow camera</Text>
+          </TouchableOpacity>
+        </SafeAreaView>
+      </ScreenBackground>
     );
   }
 
@@ -296,7 +302,7 @@ const styles = StyleSheet.create({
     width: 58,
     height: 58,
     borderRadius: 29,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.accent,
   },
   loadingWrap: {
     ...StyleSheet.absoluteFillObject,
@@ -314,7 +320,6 @@ const styles = StyleSheet.create({
   loadingLabel: { marginTop: 12, fontWeight: "700", color: colors.text },
   permission: {
     flex: 1,
-    backgroundColor: colors.background,
     padding: 24,
     justifyContent: "center",
   },
