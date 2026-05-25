@@ -1,5 +1,6 @@
 import type { ImageSource } from "expo-image";
 import { resolveLandmarkImageSource } from "../constants/landmarkImages";
+import { resolveLandmarkCoordinates } from "../constants/landmarkCoordinates";
 import type {
   Landmark,
   LandmarkCategory,
@@ -103,6 +104,7 @@ export function mapApiLandmarkToLandmark(
   const imageSource = resolveLandmarkImageSource(slug, raw.image_path);
   const lat = Number(raw.latitude) || 0;
   const lng = Number(raw.longitude) || 0;
+  const coordinate = resolveLandmarkCoordinates(slug, lat, lng);
   const displayName = formatLandmarkDisplayName(slug);
 
   return {
@@ -113,7 +115,7 @@ export function mapApiLandmarkToLandmark(
     summary: raw.summary ?? raw.description ?? "",
     etiquette: raw.etiquette ?? "",
     history: raw.history ?? "",
-    coordinate: { latitude: lat, longitude: lng },
+    coordinate,
     category: toCategory(raw.category, slug),
     distanceMeters: raw.distance_meters ?? 0,
     imageSource,

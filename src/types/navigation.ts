@@ -20,5 +20,6 @@ export type AppStackParamList = {
   MainTabs: NavigatorScreenParams<MainTabParamList> | undefined;
   Detail: { landmark: Landmark };
   Model3DViewer: { landmark: Landmark };
+  Landmark3DImage: { landmark: Landmark };
   AdminUsers: undefined;
 };

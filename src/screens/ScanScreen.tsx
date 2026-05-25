@@ -5,7 +5,7 @@ import { useNavigation } from "@react-navigation/native";
 import type { StackNavigationProp } from "@react-navigation/stack";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -18,6 +18,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AppLogo } from "../components/AppLogo";
 import { ResultCard } from "../components/ResultCard";
+import { TranslationModal } from "../components/TranslationModal";
 import { ScreenBackground } from "../components/ScreenBackground";
 import { ScannerOverlay } from "../components/ScannerOverlay";
 import { colors, radii, shadows } from "../constants/theme";
@@ -27,8 +28,7 @@ import {
   mapApiLandmarkToRecognition,
   type ApiLandmark,
 } from "../services/landmarkService";
-import { mockTranslateLandmark } from "../services/translateMock";
-import { speakLandmarkSummary } from "../services/ttsService";
+import { useBilingualLandmark } from "../hooks/useBilingualLandmark";
 import type { LandmarkRecognitionResult } from "../types/landmark";
 import type { AppStackParamList, MainTabParamList } from "../types/navigation";
 
@@ -43,6 +43,14 @@ export function ScanScreen() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<LandmarkRecognitionResult | null>(null);
   const { saveLandmark, isSaved } = useSavedLandmarks();
+  const {
+    translationVisible,
+    translating,
+    bilingual,
+    openTranslation,
+    closeTranslation,
+    listen,
+  } = useBilingualLandmark();
   const pulse = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
@@ -114,9 +122,14 @@ export function ScanScreen() {
         return;
       }
 
+      const urduPreview =
+        (res as { translated_preview?: string; urdu?: string }).translated_preview ??
+        (res as { urdu?: string }).urdu;
+
       const mapped = mapApiLandmarkToRecognition(
         landmark as ApiLandmark,
         confidence,
+        urduPreview,
       );
 
       setResult(mapped);
@@ -132,15 +145,31 @@ export function ScanScreen() {
     navigation.navigate("Detail", { landmark: result });
   }, [navigation, result]);
 
-  const onListen = useCallback(() => {
-    if (!result) return;
-    speakLandmarkSummary(result.summary);
-  }, [result]);
+  const speechOptions = useMemo(
+    () =>
+      result
+        ? {
+            landmarkName: result.name,
+            slug: result.slug,
+            urduPreview: result.translatedPreview,
+            section: "summary" as const,
+          }
+        : undefined,
+    [result],
+  );
+
+  const onListen = useCallback(
+    (lang: "en" | "ur") => {
+      if (!result || !speechOptions) return;
+      listen(result.summary, lang, speechOptions);
+    },
+    [result, speechOptions, listen],
+  );
 
   const onTranslate = useCallback(() => {
-    if (!result) return;
-    Alert.alert("Translation (mock)", mockTranslateLandmark(result));
-  }, [result]);
+    if (!result || !speechOptions) return;
+    openTranslation(result.summary, speechOptions);
+  }, [result, speechOptions, openTranslation]);
 
   const onSave = useCallback(() => {
     if (!result) return;
@@ -228,6 +257,14 @@ export function ScanScreen() {
           </TouchableOpacity>
         </View>
       </View>
+
+      <TranslationModal
+        visible={translationVisible}
+        loading={translating}
+        content={bilingual}
+        title={result?.name}
+        onClose={closeTranslation}
+      />
     </View>
   );
 }

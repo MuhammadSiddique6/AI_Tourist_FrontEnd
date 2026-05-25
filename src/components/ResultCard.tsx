@@ -1,18 +1,19 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useRef } from "react";
 import {
-    Animated,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Animated,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { accentPalette, colors, radii, shadows } from "../constants/theme";
+import type { ContentLanguage } from "../services/translationService";
 import type { LandmarkRecognitionResult } from "../types/landmark";
 
 type Props = {
   result: LandmarkRecognitionResult;
-  onListen: () => void;
+  onListen: (lang: ContentLanguage) => void;
   onTranslate: () => void;
   onSave: () => void;
   onDetails: () => void;
@@ -59,17 +60,30 @@ export function ResultCard({
         </View>
       </View>
 
-      <View style={styles.actions}>
+      <View style={styles.listenRow}>
         <TouchableOpacity
-          style={[styles.actionBtn, { backgroundColor: accentPalette.scan.bg }]}
-          onPress={onListen}
+          style={[styles.listenBtn, { backgroundColor: accentPalette.scan.bg }]}
+          onPress={() => onListen("en")}
           activeOpacity={0.8}
         >
-          <Ionicons name="volume-high" size={20} color={accentPalette.scan.fg} />
-          <Text style={[styles.actionLabel, { color: accentPalette.scan.fg }]}>
-            Listen
+          <Ionicons name="volume-high" size={18} color={accentPalette.scan.fg} />
+          <Text style={[styles.listenLabel, { color: accentPalette.scan.fg }]}>
+            English
           </Text>
         </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.listenBtn, { backgroundColor: accentPalette.map.bg }]}
+          onPress={() => onListen("ur")}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="volume-high" size={18} color={accentPalette.map.fg} />
+          <Text style={[styles.listenLabel, { color: accentPalette.map.fg }]}>
+            اردو
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.actions}>
         <TouchableOpacity
           style={[styles.actionBtn, { backgroundColor: accentPalette.explore.bg }]}
           onPress={onTranslate}
@@ -120,7 +134,7 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: "row",
     alignItems: "flex-start",
-    marginBottom: 14,
+    marginBottom: 12,
   },
   name: { fontSize: 20, fontWeight: "800", color: colors.text },
   confidence: {
@@ -133,11 +147,26 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: colors.primaryMuted,
     alignItems: "center",
     justifyContent: "center",
     marginLeft: 10,
   },
+  listenRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 10,
+  },
+  listenBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 12,
+    borderRadius: radii.md,
+    ...shadows.soft,
+  },
+  listenLabel: { fontSize: 13, fontWeight: "800" },
   actions: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -149,14 +178,12 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     marginHorizontal: 4,
     borderRadius: radii.md,
-    backgroundColor: colors.primaryMuted,
     ...shadows.soft,
   },
   actionLabel: {
     marginTop: 4,
     fontSize: 12,
     fontWeight: "700",
-    color: colors.primary,
   },
   detailsBtn: {
     flexDirection: "row",

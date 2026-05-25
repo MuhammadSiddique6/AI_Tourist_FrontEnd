@@ -34,11 +34,12 @@ type MapNav = CompositeNavigationProp<
   StackNavigationProp<AppStackParamList>
 >;
 
+/** Covers central Lahore + Bahria Town (Eiffel replica) */
 const LAHORE: Region = {
-  latitude: 31.5826,
-  longitude: 74.3276,
-  latitudeDelta: 0.12,
-  longitudeDelta: 0.12,
+  latitude: 31.48,
+  longitude: 74.3,
+  latitudeDelta: 0.32,
+  longitudeDelta: 0.22,
 };
 
 const ZOOM_DELTA = 0.045;
@@ -118,17 +119,46 @@ export function MapScreen() {
     return LAHORE;
   }, [userLocation, landmarks]);
 
+  const bottomPad = 56 + insets.bottom;
+  const hasFittedLandmarks = useRef(false);
+
   useEffect(() => {
-    if (!userLocation || !mapRef.current) return;
-    mapRef.current.animateToRegion(
-      {
-        ...userLocation,
-        latitudeDelta: ZOOM_DELTA,
-        longitudeDelta: ZOOM_DELTA,
+    if (
+      hasFittedLandmarks.current ||
+      !mapRef.current ||
+      !showLandmarks ||
+      loading ||
+      visibleLandmarks.length === 0
+    ) {
+      return;
+    }
+
+    const coords = visibleLandmarks
+      .filter(
+        (lm) =>
+          lm.coordinate.latitude !== 0 && lm.coordinate.longitude !== 0,
+      )
+      .map((lm) => lm.coordinate);
+
+    if (coords.length === 0) return;
+
+    hasFittedLandmarks.current = true;
+    mapRef.current.fitToCoordinates(coords, {
+      edgePadding: {
+        top: 100 + insets.top,
+        right: 48,
+        bottom: bottomPad + 90,
+        left: 48,
       },
-      600,
-    );
-  }, [userLocation]);
+      animated: true,
+    });
+  }, [
+    visibleLandmarks,
+    showLandmarks,
+    loading,
+    insets.top,
+    bottomPad,
+  ]);
 
   const centerOnUser = useCallback(async () => {
     const coords = userLocation ?? (await refreshLocation());
@@ -179,8 +209,6 @@ export function MapScreen() {
     );
   };
 
-  const bottomPad = 56 + insets.bottom;
-
   const footerSubtext = useMemo(() => {
     if (showHotels) {
       if (hotelsLoading) return "Searching hotels near you…";
@@ -211,17 +239,22 @@ export function MapScreen() {
         followsUserLocation={false}
       >
         {showLandmarks
-          ? visibleLandmarks.map((lm) => (
-              <Marker
-                key={lm.id}
-                coordinate={lm.coordinate}
-                title={lm.name}
-                description={lm.category}
-                pinColor={colors.primary}
-                onCalloutPress={() => openLandmark(lm)}
-                onPress={() => openLandmark(lm)}
-              />
-            ))
+          ? visibleLandmarks
+              .filter(
+                (lm) =>
+                  lm.coordinate.latitude !== 0 && lm.coordinate.longitude !== 0,
+              )
+              .map((lm) => (
+                <Marker
+                  key={lm.id}
+                  coordinate={lm.coordinate}
+                  title={lm.name}
+                  description={lm.category}
+                  pinColor={colors.primary}
+                  onCalloutPress={() => openLandmark(lm)}
+                  onPress={() => openLandmark(lm)}
+                />
+              ))
           : null}
 
         {showHotels

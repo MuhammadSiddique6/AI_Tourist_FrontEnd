@@ -3,7 +3,7 @@ import type { RouteProp } from "@react-navigation/native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { StackNavigationProp } from "@react-navigation/stack";
 import { Image } from "expo-image";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
   Alert,
   ScrollView,
@@ -13,15 +13,15 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { DetailTabBar, type DetailTab } from "../components/DetailTabBar";
 import { PrimaryButton } from "../components/PrimaryButton";
+import { TranslationModal } from "../components/TranslationModal";
 import { normalizeLandmarkKey } from "../constants/landmarkImages";
+import { hasLandmark3dImage } from "../constants/landmark3dImages";
 import { hasLandmarkModel } from "../constants/landmarkModels";
 import { colors, radii, shadows } from "../constants/theme";
 import { useSavedLandmarks } from "../context/SavedLandmarksContext";
+import { useBilingualLandmark } from "../hooks/useBilingualLandmark";
 import { getLandmarkImageSource } from "../services/landmarkService";
-import { mockTranslateLandmark } from "../services/translateMock";
-import { speakLandmarkSummary, stopSpeaking } from "../services/ttsService";
 import type { AppStackParamList } from "../types/navigation";
 
 type Route = RouteProp<AppStackParamList, "Detail">;
@@ -31,22 +31,27 @@ export function DetailScreen() {
   const { params } = useRoute<Route>();
   const navigation = useNavigation<Nav>();
   const { landmark } = params;
-  const [tab, setTab] = useState<DetailTab>("summary");
   const { saveLandmark, isSaved } = useSavedLandmarks();
+  const {
+    translationVisible,
+    translating,
+    bilingual,
+    openTranslation,
+    closeTranslation,
+    listen,
+  } = useBilingualLandmark();
 
-  const body = useMemo(() => {
-    if (tab === "summary") return landmark.summary;
-    return landmark.summary;
-  }, [landmark, tab]);
+  const summary = landmark.summary;
 
-  const listen = () => {
-    stopSpeaking();
-    speakLandmarkSummary(body);
-  };
-
-  const translate = () => {
-    Alert.alert("Translation (mock)", mockTranslateLandmark(landmark));
-  };
+  const speechOptions = useMemo(
+    () => ({
+      landmarkName: landmark.name,
+      slug: landmark.slug,
+      urduPreview: landmark.translatedPreview,
+      section: "summary" as const,
+    }),
+    [landmark.name, landmark.slug, landmark.translatedPreview],
+  );
 
   const download = () => {
     saveLandmark(landmark);
@@ -60,14 +65,19 @@ export function DetailScreen() {
   const distKm = (landmark.distanceMeters / 1000).toFixed(
     landmark.distanceMeters >= 1000 ? 1 : 2,
   );
-  const canView3D = hasLandmarkModel(landmark.slug ?? landmark.name);
+  const landmarkKey = landmark.slug ?? normalizeLandmarkKey(landmark.name);
+  const canView3DModel = hasLandmarkModel(landmarkKey);
+  const canView3DImage = hasLandmark3dImage(landmarkKey);
 
   const open3DViewer = () => {
     navigation.navigate("Model3DViewer", {
-      landmark: {
-        ...landmark,
-        slug: landmark.slug ?? normalizeLandmarkKey(landmark.name),
-      },
+      landmark: { ...landmark, slug: landmarkKey },
+    });
+  };
+
+  const open3DImage = () => {
+    navigation.navigate("Landmark3DImage", {
+      landmark: { ...landmark, slug: landmarkKey },
     });
   };
 
@@ -108,14 +118,13 @@ export function DetailScreen() {
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-        <DetailTabBar active={tab} onChange={setTab} />
-
         <View style={styles.card}>
-          <Text style={styles.cardBody}>{body}</Text>
+          <Text style={styles.sectionLabel}>Summary</Text>
+          <Text style={styles.cardBody}>{summary}</Text>
         </View>
 
         <View style={styles.actions}>
-          {canView3D ? (
+          {canView3DModel ? (
             <PrimaryButton
               title="View 3D Model"
               colorVariant="tertiary"
@@ -123,17 +132,35 @@ export function DetailScreen() {
               style={styles.actionBtn}
             />
           ) : null}
+          {canView3DImage ? (
+            <PrimaryButton
+              title="View 3D Image"
+              colorVariant="secondary"
+              onPress={open3DImage}
+              style={styles.actionBtn}
+            />
+          ) : null}
+          <View style={styles.listenRow}>
+            <PrimaryButton
+              title="Listen · English"
+              variant="outline"
+              colorVariant="secondary"
+              onPress={() => listen(summary, "en", speechOptions)}
+              style={styles.listenBtn}
+            />
+            <PrimaryButton
+              title="سنیں · اردو"
+              variant="outline"
+              colorVariant="accent"
+              onPress={() => listen(summary, "ur", speechOptions)}
+              style={styles.listenBtn}
+            />
+          </View>
           <PrimaryButton
-            title="Listen"
-            colorVariant="primary"
-            onPress={listen}
-            style={styles.actionBtn}
-          />
-          <PrimaryButton
-            title="Translate"
+            title="Translate (English & Urdu)"
             variant="outline"
             colorVariant="accent"
-            onPress={translate}
+            onPress={() => openTranslation(summary, speechOptions)}
             style={styles.actionBtn}
           />
           <PrimaryButton
@@ -149,6 +176,14 @@ export function DetailScreen() {
           <Text style={styles.savedNote}>Already in your saved landmarks.</Text>
         ) : null}
       </ScrollView>
+
+      <TranslationModal
+        visible={translationVisible}
+        loading={translating}
+        content={bilingual}
+        title={landmark.name}
+        onClose={closeTranslation}
+      />
     </View>
   );
 }
@@ -193,8 +228,18 @@ const styles = StyleSheet.create({
     borderLeftColor: colors.accent,
     ...shadows.elevated,
   },
+  sectionLabel: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: colors.primary,
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+    marginBottom: 10,
+  },
   cardBody: { fontSize: 16, lineHeight: 24, color: colors.text },
   actions: { gap: 10 },
+  listenRow: { flexDirection: "row", gap: 10 },
+  listenBtn: { flex: 1 },
   actionBtn: { width: "100%" },
   savedNote: {
     marginTop: 14,
