@@ -1,12 +1,17 @@
+import { Ionicons } from "@expo/vector-icons";
 import {
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
+import {
+  HOTEL_MAP_COLOR,
+  MAP_FILTER_LABELS,
+  type MapFilterId,
+} from "../constants/mapFilters";
 import { colors, radii, shadows } from "../constants/theme";
-import { MAP_FILTER_LABELS, type MapFilterId } from "../constants/mapFilters";
 
 type Props = {
   active: MapFilterId;
@@ -23,14 +28,36 @@ export function MapCategoryChips({ active, onChange }: Props) {
       >
         {MAP_FILTER_LABELS.map((item) => {
           const selected = active === item.id;
+          const isHotel = item.id === "hotels";
           return (
             <TouchableOpacity
               key={item.id}
               onPress={() => onChange(item.id)}
-              style={[styles.chip, selected && styles.chipActive]}
+              style={[
+                styles.chip,
+                selected && styles.chipActive,
+                selected && isHotel && styles.chipHotelActive,
+              ]}
               activeOpacity={0.85}
             >
-              <Text style={[styles.label, selected && styles.labelActive]}>
+              <Ionicons
+                name={item.icon}
+                size={16}
+                color={
+                  selected
+                    ? "#fff"
+                    : isHotel
+                      ? HOTEL_MAP_COLOR
+                      : colors.textSecondary
+                }
+              />
+              <Text
+                style={[
+                  styles.label,
+                  selected && styles.labelActive,
+                  !selected && isHotel && styles.labelHotel,
+                ]}
+              >
                 {item.label}
               </Text>
             </TouchableOpacity>
@@ -56,7 +83,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   chip: {
-    paddingHorizontal: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: radii.pill,
     backgroundColor: colors.surface,
@@ -64,6 +94,8 @@ const styles = StyleSheet.create({
     ...shadows.elevated,
   },
   chipActive: { backgroundColor: colors.primary },
+  chipHotelActive: { backgroundColor: HOTEL_MAP_COLOR },
   label: { fontSize: 14, fontWeight: "700", color: colors.textSecondary },
   labelActive: { color: "#fff" },
+  labelHotel: { color: HOTEL_MAP_COLOR },
 });

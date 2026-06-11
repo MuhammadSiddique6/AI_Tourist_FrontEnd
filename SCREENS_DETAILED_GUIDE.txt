@@ -1,0 +1,1395 @@
+================================================================================
+AI-TOURIST APP - ALL SCREENS DETAILED GUIDE
+Complete explanation of every screen with code flow, UI elements, and user interaction
+================================================================================
+
+TABLE OF CONTENTS:
+1. Authentication Screens (5 screens)
+2. Main App Screens (4 screens)
+3. Specialized Screens (3D viewers & Admin) (3 screens)
+4. Screen Hierarchy & Navigation
+5. User Flow Diagrams
+
+================================================================================
+AUTHENTICATION SCREENS (5 Screens)
+================================================================================
+
+These screens handle user login, registration, and password recovery.
+They appear BEFORE the user logs in (AuthStack).
+
+================================================================================
+SCREEN 1: LOGIN SCREEN
+================================================================================
+
+FILE: src/screens/LoginScreen.tsx
+PURPOSE: Allow existing users to sign in with email and password
+
+┌─────────────────────────────────────┐
+│  AI-Based Tourist Companion         │
+│  Cultural awareness, in your pocket │
+├─────────────────────────────────────┤
+│  Welcome back                       │
+│  [Email input field]                │
+│  [Password input field]             │
+│  Forgot password? (link)            │
+│  [Sign in button]                   │
+│  New here? Create an account (link) │
+└─────────────────────────────────────┘
+
+STEP-BY-STEP FLOW:
+
+1. USER ENTERS EMAIL
+   - Text input field labeled "Email"
+   - Keyboard type: email-address
+   - Auto-capitalization: OFF
+   - Auto-complete: enabled
+   
+2. USER ENTERS PASSWORD
+   - Text input field labeled "Password"
+   - Masked (dots instead of characters)
+   - Auto-focus set to move from email to password
+   - Return key triggers submission
+
+3. USER TAPS "SIGN IN" BUTTON
+   Step A: Input Validation
+   - Checks if email is valid format (contains @ and .)
+   - Checks if password is at least 6 characters
+   - If errors found: Display error messages next to fields
+   - If valid: Continue to step B
+
+   Step B: API Call
+   - Sends POST request to /auth/login
+   - Body contains: { email, password }
+   - Shows loading spinner while waiting
+   - Timeout: 15 seconds
+
+   Step C: Response Handling
+   - If successful (200 OK):
+     * Backend returns: { token, user }
+     * token = JWT authentication token
+     * user = User object with id, email, displayName, role
+     * Calls login() function from AuthContext
+     * User data and token stored in context
+     * Navigates to Home Screen
+   
+   - If failed (400, 401, 500):
+     * Shows error message: "Login failed" or server message
+     * Error displayed under password field
+     * User can try again
+
+4. ERROR CLEARING
+   - When user starts typing to fix error
+   - Error message disappears automatically
+   - Happens for both email and password fields
+
+5. FORGOT PASSWORD LINK
+   - Tapping "Forgot password?" navigates to ForgotPasswordScreen
+   - Takes user through password reset flow
+
+6. CREATE ACCOUNT LINK
+   - Tapping "Create an account" navigates to RegisterScreen
+   - New users go through registration process
+
+KEY COMPONENTS:
+- AppLogo: Shows app logo at top
+- ScreenBackground: Sets gradient/color background
+- TextField: Custom input component with error handling
+- PrimaryButton: Main action button with loading state
+- KeyboardAvoidingView: Keeps inputs visible when keyboard opens
+- SafeAreaView: Respects device notches/safe area
+
+KEYBOARD HANDLING:
+- iOS: Padding offset to avoid keyboard
+- Android: Height adjustment
+- keyboardShouldPersistTaps: "handled" (allows tapping non-input areas)
+- keyboardDismissMode: "on-drag" (dismiss when scrolling)
+
+STATE VARIABLES:
+- email: string (current email input)
+- password: string (current password input)
+- errors: object (validation errors for each field)
+- submitting: boolean (true while API request in progress)
+
+================================================================================
+SCREEN 2: REGISTER SCREEN
+================================================================================
+
+FILE: src/screens/RegisterScreen.tsx
+PURPOSE: Allow new users to create an account
+
+┌─────────────────────────────────────┐
+│  ← Back to sign in                  │
+│  (App Logo)                         │
+│  Create your traveler profile       │
+│  Save favorite sites and organize   │
+├─────────────────────────────────────┤
+│  [Display name input]               │
+│  [Email input]                      │
+│  [Password input]                   │
+│  [Register button]                  │
+└─────────────────────────────────────┘
+
+STEP-BY-STEP FLOW:
+
+1. USER ENTERS DISPLAY NAME
+   - Text field for user's name (e.g., "Ahmed Khan")
+   - Used for personalization throughout the app
+   - Auto-complete: name
+   - Must be at least 2 characters
+
+2. USER ENTERS EMAIL
+   - Same as login screen
+   - Must be valid email format
+
+3. USER ENTERS PASSWORD
+   - Same as login screen
+   - Must be at least 6 characters
+
+4. USER TAPS "REGISTER" BUTTON
+   Step A: Input Validation
+   - Validates all three fields
+   - displayName: not empty, at least 2 chars
+   - email: valid format
+   - password: at least 6 characters
+   - Shows error messages if validation fails
+
+   Step B: Register API Call
+   - Sends POST to /auth/register
+   - Body: { name: displayName, email, password }
+   - Backend creates new user account
+   - Returns user ID
+
+   Step C: Auto-login
+   - Immediately calls /auth/login API
+   - With same email and password
+   - Gets authentication token
+   - User doesn't need to manually sign in
+
+   Step D: Session Created
+   - login() called with user data and token
+   - Context stores user session
+   - Navigates to Home Screen
+
+5. ERROR HANDLING
+   - If email already exists: shows error
+   - If server fails: shows server message
+   - User can correct and try again
+
+6. BACK BUTTON
+   - Returns to Login screen
+   - Discards form data
+
+KEY DIFFERENCES FROM LOGIN:
+- Three fields instead of two
+- Auto-login after registration
+- Tab navigation between fields
+- "Back to sign in" instead of "Forgot password"
+
+FIELD PROGRESSION:
+displayName → Email → Password → Register
+(Each field's return key focuses next field)
+
+================================================================================
+SCREEN 3: FORGOT PASSWORD SCREEN
+================================================================================
+
+FILE: src/screens/ForgotPasswordScreen.tsx
+PURPOSE: Start password reset by requesting OTP code
+
+┌─────────────────────────────────────┐
+│  ← Back to sign in                  │
+│  (App Logo)                         │
+│  Forgot password                    │
+│  Enter your email to reset password │
+├─────────────────────────────────────┤
+│  [Email input]                      │
+│  [Send code to email button]        │
+└─────────────────────────────────────┘
+
+STEP-BY-STEP FLOW:
+
+1. USER ENTERS EMAIL
+   - Only one input field
+   - Must be email registered with the app
+
+2. USER TAPS "SEND CODE TO EMAIL"
+   Step A: Validation
+   - Checks email format
+   - Shows error if invalid
+
+   Step B: Request OTP
+   - Calls /auth/forgot-password API
+   - Backend generates 6-digit OTP code
+   - Sends code to user's email
+   - Returns code (for demo mode)
+
+   Step C: Success Alert
+   - Shows alert: "Check your email"
+   - In mock mode: Shows the code directly
+     (In production: User checks their email)
+   - "Continue" button navigates to OTP Verification screen
+
+3. ERROR HANDLING
+   - If email doesn't exist: shows error
+   - If email already has pending reset: may show message
+   - Network error: shows timeout message
+
+FLOW AFTER THIS:
+Forgot Password → OTP Verification → Reset Password → Login
+
+================================================================================
+SCREEN 4: OTP VERIFICATION SCREEN
+================================================================================
+
+FILE: src/screens/OtpVerificationScreen.tsx
+PURPOSE: Verify the 6-digit code sent to email
+
+┌─────────────────────────────────────┐
+│  ← Use a different email            │
+│  (App Logo)                         │
+│  Check your email                   │
+│  We emailed a code to: user@ex.com  │
+│  Enter the 6-digit code below       │
+├─────────────────────────────────────┤
+│  [6-digit code input]               │
+│  [Verify and continue button]       │
+│  Resend code to email (link)        │
+└─────────────────────────────────────┘
+
+STEP-BY-STEP FLOW:
+
+1. USER ENTERS 6-DIGIT CODE
+   - Input field accepts only numbers
+   - Auto-stops at 6 digits
+   - Displays as the user types
+   - Example: User types "1", "2", "3", etc.
+
+2. USER TAPS "VERIFY AND CONTINUE"
+   Step A: Validation
+   - Checks that code is exactly 6 digits
+   - Shows error if format wrong
+
+   Step B: Verify OTP
+   - Calls verification function
+   - Checks if code matches the one sent to email
+   - Checks if code hasn't expired (usually 10-15 min)
+
+   Step C: Success
+   - If valid: Navigates to Reset Password screen
+   - Passes: email, otp_code (as route params)
+
+   Step D: Failure
+   - If invalid: Shows error "Invalid or expired code"
+   - User can try again or resend
+
+3. RESEND CODE
+   - User taps "Resend code to email"
+   - Calls resend API
+   - Generates new code
+   - Sends to same email
+   - Shows alert with new code (in demo)
+
+4. BACK BUTTON
+   - "Use a different email" link
+   - Returns to Forgot Password
+   - Allows entering different email
+
+KEY VALIDATION:
+- Must be exactly 6 digits
+- Cannot be empty
+- Time-based expiration
+
+================================================================================
+SCREEN 5: RESET PASSWORD SCREEN
+================================================================================
+
+FILE: src/screens/ResetPasswordScreen.tsx
+PURPOSE: Set a new password after OTP verification
+
+┌─────────────────────────────────────┐
+│  ← Back to code                     │
+│  (App Logo)                         │
+│  Create new password                │
+│  Choose a strong password for email │
+├─────────────────────────────────────┤
+│  [New password input]               │
+│  [Confirm new password input]       │
+│  [Update password button]           │
+└─────────────────────────────────────┘
+
+STEP-BY-STEP FLOW:
+
+1. SESSION VALIDATION
+   - On screen load, checks if otp_code exists
+   - If missing (expired session): Shows alert
+   - Returns user to Forgot Password screen
+   - Prevents unauthorized password resets
+
+2. USER ENTERS NEW PASSWORD
+   - First password field
+   - Masked display
+   - Must be at least 6 characters
+   - Should be strong (recommendation: mix of chars)
+
+3. USER CONFIRMS PASSWORD
+   - Second password field
+   - Must match first password
+   - If they don't match: Shows error
+
+4. USER TAPS "UPDATE PASSWORD"
+   Step A: Validation
+   - Checks both passwords not empty
+   - Checks both passwords are at least 6 chars
+   - Checks both passwords match exactly
+
+   Step B: Update Password API
+   - Calls /auth/reset-password
+   - Sends: { email, otp_code, password }
+   - Backend updates password in database
+
+   Step C: Success
+   - Resets navigation stack
+   - Navigates to Login Screen
+   - Shows alert: "Password updated successfully"
+   - User can now login with new password
+
+5. ERROR HANDLING
+   - Passwords don't match: Shows error
+   - Password too short: Shows error
+   - Backend error: Shows server message
+   - Network error: Shows timeout
+
+SECURITY FEATURES:
+- OTP_code required (can't reset without it)
+- Password field masked
+- Timeout prevents old sessions from working
+- Backend validates before updating
+
+COMPLETE PASSWORD RESET FLOW:
+1. Forgot Password (enter email)
+2. OTP Verification (enter code from email)
+3. Reset Password (enter new password)
+4. Login Screen (sign in with new password)
+
+================================================================================
+MAIN APP SCREENS (4 Screens)
+================================================================================
+
+These screens appear AFTER login (MainTabNavigator - 4 tabs at bottom).
+Users navigate between these screens using bottom tab bar.
+
+================================================================================
+SCREEN 6: HOME SCREEN
+================================================================================
+
+FILE: src/screens/HomeScreen.tsx
+PURPOSE: Dashboard showing welcome, quick actions, stats, and featured landmarks
+LOCATION: First tab in bottom tab bar
+
+┌─────────────────────────────────────┐
+│  Good morning                       │
+│  Welcome back, Ahmed       [Avatar] │
+├─────────────────────────────────────┤
+│  ┌──────────┐  ┌──────────┐        │
+│  │ 📷 Scan  │  │ 🗺 Map   │        │
+│  │ Identify │  │ Explore  │        │
+│  │landmarks │  │ nearby   │        │
+│  └──────────┘  └──────────┘        │
+├─────────────────────────────────────┤
+│  6 Saved  │  42 Landmarks  │  12 │
+│                            Categories│
+├─────────────────────────────────────┤
+│  Featured Landmarks              → │
+│  ┌───────────────────────────────┐ │
+│  │ [Image] Badshahi Mosque       │ │
+│  │ Religious · 1.2 km away · 95% │ │
+│  └───────────────────────────────┘ │
+│  ┌───────────────────────────────┐ │
+│  │ [Image] Lahore Fort           │ │
+│  │ Religious · 2.3 km away · 98% │ │
+│  └───────────────────────────────┘ │
+│  ┌───────────────────────────────┐ │
+│  │ [Image] National Museum       │ │
+│  │ Museum · 3.1 km away · 92%    │ │
+│  └───────────────────────────────┘ │
+└─────────────────────────────────────┘
+
+STEP-BY-STEP FLOW:
+
+1. SCREEN LOADS
+   - Gets user data from AuthContext
+   - Loads all landmarks (via useLandmarks hook)
+   - Calculates featured landmarks (top 3)
+   - Counts saved landmarks
+   - Calculates unique categories
+
+2. GREETING SECTION
+   - Time-based greeting: "Good morning/afternoon/evening"
+   - Shows personalized message: "Welcome back, [Name]"
+   - Avatar circle with first letter of name
+
+3. ACTION CARDS (Animated)
+   - Two cards with spring animations
+   - When user presses:
+     * Card scales down 4% (haptic feedback)
+     * When released, scales back to normal with bounce
+   
+   SCAN CARD:
+   - Tap navigates to Scan Screen
+   - Icon: 📷 Camera
+   - Text: "Identify landmarks"
+   - Color: Scan accent (usually orange/purple)
+   
+   MAP CARD:
+   - Tap navigates to Map Screen
+   - Icon: 🗺 Map
+   - Text: "Explore nearby"
+   - Color: Map accent (usually blue)
+
+4. STATS CARD
+   - Three statistics separated by dividers
+   - Stat 1: Number of saved landmarks
+   - Stat 2: Total landmarks in database
+   - Stat 3: Number of categories
+   - Each has colored label text
+
+5. FEATURED LANDMARKS SECTION
+   - Header: "Featured Landmarks" with "See all →" link
+   - Shows top 3 landmarks in scrollable list
+   - Each landmark card shows:
+     * Landmark image
+     * Landmark name
+     * Category and distance
+     * Confidence percentage
+   
+   USER CAN:
+   - Tap landmark → Opens Detail Screen
+   - Tap "See all" link → Goes to Map Screen
+   - Swipe list if more items available
+
+6. ERROR HANDLING
+   - If landmarks fail to load:
+     * Shows error message
+     * Provides "Tap to retry" button
+     * Calls refresh function on tap
+   - If still loading:
+     * Shows spinner animation
+
+7. LOADING STATE
+   - Initial load shows spinner
+   - Featured cards show skeleton/placeholder
+   - Stats show while loading
+
+KEY FEATURES:
+- Dynamic greeting based on time
+- Smooth spring animations on buttons
+- Real-time stats updates
+- Quick access to main features
+- Responsive to saved/unsaved changes
+
+================================================================================
+SCREEN 7: SCAN SCREEN
+================================================================================
+
+FILE: src/screens/ScanScreen.tsx
+PURPOSE: Use camera to photograph landmarks and recognize them with AI
+LOCATION: Second tab in bottom tab bar
+
+┌─────────────────────────────────────┐
+│  📍 Lahore, Pakistan  ·  Offline ✓  │
+│                                     │
+│  ┌─────────────────────────────────┐
+│  │                                 │
+│  │      Camera Feed Here           │
+│  │      (Live video stream)        │
+│  │                                 │
+│  │      ╱─────────────╲           │
+│  │     │   Scan Area   │           │
+│  │     │   (Highlight) │           │
+│  │      ╲─────────────╱            │
+│  │                                 │
+│  └─────────────────────────────────┘
+│                                     │
+│  Tap the shutter to scan the...    │
+│                                     │
+│  ┌──────────────────────────────┐  │
+│  │                              │  │
+│  │  ◎ (Shutter button)          │  │
+│  │                              │  │
+│  └──────────────────────────────┘  │
+└─────────────────────────────────────┘
+
+AFTER RECOGNITION:
+┌─────────────────────────────────────┐
+│  📍 Lahore, Pakistan  ·  Offline ✓  │
+│                                     │
+│  ┌─────────────────────────────────┐
+│  │                                 │
+│  │      Camera Feed Here           │
+│  │                                 │
+│  └─────────────────────────────────┘
+│                                     │
+│  ┌──────────────────────────────┐  │
+│  │ Badshahi Mosque              │  │
+│  │ Religious · 1.2 km · 95%     │  │
+│  │                              │  │
+│  │ [Listen EN] [Listen UR]      │  │
+│  │ [Translate] [Save] [Details] │  │
+│  └──────────────────────────────┘  │
+│              ◎                      │
+└─────────────────────────────────────┘
+
+STEP-BY-STEP FLOW:
+
+1. PERMISSION CHECK
+   - App requests camera permission on first use
+   - If denied: Shows permission request screen
+   - If granted: Shows camera feed
+
+2. CAMERA SETUP
+   - Live video stream from device camera
+   - Fixed camera direction: back (facing outward)
+   - Dark overlay on sides with bright scan frame
+   - Status pill at top shows location status
+   - Pulsing scanner overlay guides user
+
+3. USER TAPS SHUTTER BUTTON
+   - Circular button at bottom center
+   - When pressed: Expands outer ring animation
+   - Captures photo from camera
+
+4. PHOTO PROCESSING
+   - Shows loading spinner
+   - Pulsing scale animation
+   - Text: "Recognizing landmark…"
+   - Sends to backend ML model
+   - Timeout: 2 minutes (models can be slow)
+
+5. RECOGNITION RESULT
+   
+   IF LANDMARK FOUND:
+   - ResultCard appears in bottom area
+   - Shows recognized landmark details:
+     * Name
+     * Category
+     * Distance from user
+     * Confidence percentage (95%)
+   - Four action buttons available:
+     * "Listen · English": Text-to-speech in English
+     * "سنیں · اردو": Text-to-speech in Urdu
+     * "Translate": Opens bilingual translation modal
+     * "Save": Adds to saved landmarks
+     * "Details" button opens full Detail Screen
+   
+   IF LANDMARK NOT IN DATABASE:
+   - Alert shows: "Detected '[landmark name]' but not in database"
+   - Shows confidence percentage
+   - User can go back and try another photo
+   
+   IF NO LANDMARK DETECTED:
+   - Alert: "Could not recognize the landmark"
+   - User can try again with different angle/lighting
+
+6. RESULT CARD INTERACTIONS:
+   
+   Listen English:
+   - Plays audio pronunciation in English
+   - Also plays text description as TTS
+   
+   Listen Urdu:
+   - Same but in Urdu language
+   - Uses Urdu text-to-speech voice
+   
+   Translate:
+   - Opens modal with English and Urdu side-by-side
+   - Full paragraph translations visible
+   - Can read bilingual content
+   
+   Save:
+   - Adds landmark to SavedLandmarksContext
+   - Shows confirmation: "[Landmark] added to collection"
+   
+   Details:
+   - Navigates to Detail Screen
+   - Shows full information about landmark
+   - Can view 3D models, more history, etc.
+
+7. RETAKE PHOTO
+   - Tap shutter again to take another photo
+   - Replaces previous result
+   - Result card updates with new recognition
+
+8. ERROR HANDLING:
+   - Camera permission denied: Shows request
+   - Photo cancelled: Returns to camera
+   - Network error: Shows alert with message
+   - Timeout: Shows "Request timed out" message
+   - Server error: Shows server error message
+
+KEY FEATURES:
+- On-device demo mode (offline ready)
+- ML model runs on backend
+- Real-time camera preview
+- Immediate results
+- Bilingual support
+- Save to collection
+- Works offline with cached data
+
+TECHNICAL DETAILS:
+- CameraView: expo-camera component
+- Image capture: expo-image-picker
+- API: POST /ai/recognize with FormData
+- Timeout: 120 seconds for ML model
+- Result includes: prediction, confidence, landmark data
+
+================================================================================
+SCREEN 8: MAP SCREEN
+================================================================================
+
+FILE: src/screens/MapScreen.tsx
+PURPOSE: Interactive map showing landmark locations and nearby hotels
+LOCATION: Third tab in bottom tab bar
+
+┌─────────────────────────────────────┐
+│  [🔍 Filter buttons - horizontal]   │
+│                                     │
+│  ┌─────────────────────────────────┐
+│  │         Map View                │
+│  │    (Interactive Map)            │
+│  │  📍 Markers at locations       │
+│  │  👁 Can see all landmarks      │
+│  │                                 │
+│  └─────────────────────────────────┘
+│                                     │
+│  [📍 Center on me] [⋯ More]        │
+└─────────────────────────────────────┘
+
+STEP-BY-STEP FLOW:
+
+1. MAP INITIALIZATION
+   - Uses react-native-maps MapView
+   - Default region: Lahore area (31.48°N, 74.3°E)
+   - Shows all landmarks as markers
+   - Auto-fits all visible landmarks on load
+
+2. FILTER CHIPS (Top of screen)
+   - Categories shown as horizontal chips
+   - Options: "All", "Museums", "Religious", "Family", "Hotels"
+   - Active filter highlighted
+   - Tap to change filter
+
+3. LANDMARK MARKERS
+   - Colored markers on map
+   - Color matches landmark category
+   - Each marker represents one landmark
+   - Marker includes icon or first letter
+
+4. USER LOCATION
+   - Blue dot shows user's current location
+   - Requires location permission
+   - Can center on user by tapping location button
+   - Automatically calculates distance to landmarks
+
+5. FILTER INTERACTION:
+
+   CATEGORY FILTERS (All/Museum/Religious/Family):
+   - Shows only landmarks in that category
+   - Map updates to show filtered landmarks
+   - Markers update immediately
+   - Distance calculated from user location
+   
+   HOTELS FILTER:
+   - Fetches nearby hotels (within 8 km)
+   - Shows different marker style
+   - Tap hotel marker → Shows alert with:
+     * Hotel name
+     * Distance from you
+     * Address
+     * Hotel type
+     * "Open in Maps" button
+
+6. LANDMARK INTERACTION:
+   - Tap marker → Alert appears with:
+     * Landmark name
+     * Distance and category
+     * "View Details" button
+   - Tap "View Details" → Opens Detail Screen
+   - Can also tap info window (if using custom markers)
+
+7. MAP CONTROLS:
+   - Pinch to zoom: Standard map gesture
+   - Drag to pan: Move around map
+   - Two-finger rotation: Rotate view
+   - Double-tap: Quick zoom in
+   
+   LOCATION BUTTON:
+   - Taps button → Map animates to user location
+   - Zoom level: 0.045 degrees
+   - Smooth animation over 500ms
+   - Shows error if location unavailable
+
+8. LOCATION PERMISSIONS:
+   - First tap of location button requests permission
+   - If denied: Shows alert with reason
+   - If granted: Shows location on map
+   - Settings option available in alert
+
+9. AUTO-FIT ON LOAD:
+   - Calculates bounds of all visible landmarks
+   - Adds padding around edges
+   - Animates map to fit all
+   - Only happens once on first load
+
+10. ERROR HANDLING:
+    - Landmarks fail to load: Shows error message
+    - Hotel search fails: Shows error alert
+    - No hotels found: "No hotels within 8 km"
+    - Location unavailable: Suggests enabling permissions
+
+KEY FEATURES:
+- Interactive map view
+- Category filtering
+- Nearby hotel search
+- Location-based distance
+- Animated transitions
+- Auto-fit landmarks
+- Responsive to filters
+
+HOTELS FEATURE:
+- Uses location coordinates
+- Searches 8 km radius
+- Displays hotel name, address, distance
+- Can open in native Maps app
+- Updates when filter changes to "Hotels"
+
+================================================================================
+SCREEN 9: PROFILE SCREEN
+================================================================================
+
+FILE: src/screens/ProfileScreen.tsx
+PURPOSE: Show user profile and manage saved landmarks
+LOCATION: Fourth tab in bottom tab bar
+
+┌─────────────────────────────────────┐
+│  Good morning                       │
+│  Profile                   [Avatar] │
+├─────────────────────────────────────┤
+│  ┌─────────────────────────────────┐
+│  │ [A] Ahmed Khan                  │
+│  │     ahmed@example.com           │
+│  └─────────────────────────────────┘
+│                                     │
+│  ┌─────────────────────────────────┐ (if admin)
+│  │ 🛡️  Admin panel                  │
+│  │ View, block, or delete users  → │
+│  └─────────────────────────────────┘
+│                                     │
+│  Saved landmarks              6     │
+│  ┌─────────────────────────────────┐
+│  │ 📍 Badshahi Mosque              │
+│  │ Religious · 95% confidence  [🗑] │
+│  │                                 │
+│  │ 📍 Lahore Fort                  │
+│  │ Religious · 98% confidence  [🗑] │
+│  │                                 │
+│  │ 📍 National Museum              │
+│  │ Museum · 92% confidence     [🗑] │
+│  └─────────────────────────────────┘
+│                                     │
+│  [Sign out]                         │
+└─────────────────────────────────────┘
+
+STEP-BY-STEP FLOW:
+
+1. SCREEN LOADS
+   - Gets user info from AuthContext
+   - Gets saved landmarks from SavedLandmarksContext
+   - Displays user's display name and email
+   - Shows count of saved items
+
+2. USER INFORMATION CARD
+   - Avatar: Circle with first letter of name
+   - Display name: User's full name
+   - Email: User's email address
+   - Information from context
+
+3. ADMIN PANEL (Conditional)
+   - Only shows if user.role = "admin"
+   - Tapping opens Admin Users Screen
+   - Shows: "View, block, or delete users"
+   - Shield icon indicates admin access
+
+4. SAVED LANDMARKS LIST
+   - FlatList showing all saved landmarks
+   - For each landmark shows:
+     * Location icon
+     * Landmark name
+     * Category
+     * Confidence percentage
+     * Delete button (trash icon)
+   
+   EMPTY STATE:
+   - If no saved landmarks:
+     * Shows large image icon
+     * Text: "No saves yet"
+     * Instructions: "Scan from camera tab and tap Save"
+
+5. LANDMARK INTERACTIONS:
+   
+   TAP LANDMARK:
+   - Opens Detail Screen for that landmark
+   - Can view full information
+   - Can view 3D models
+   - Can listen or translate
+   
+   TAP TRASH ICON:
+   - Removes landmark from saved collection
+   - Item disappears from list
+   - Stored locally (SavedLandmarksContext)
+
+6. SIGN OUT BUTTON
+   - Outline style button at bottom
+   - Tapping triggers confirmation
+   - Calls logout() from AuthContext
+   - Clears all user data
+   - Clears auth token
+   - Navigates back to Login Screen
+   - All saved data in context is reset
+
+KEY FEATURES:
+- View profile information
+- Manage saved landmarks
+- Quick landmark access
+- Delete saved items
+- Admin access (if admin user)
+- Easy sign out
+
+SAVED LANDMARKS:
+- Stored in SavedLandmarksContext
+- Persists during session
+- Shown with visual indicators
+- Can be deleted individually
+- Each shows confidence of scan
+
+================================================================================
+SPECIALIZED SCREENS (3 Screens)
+================================================================================
+
+These screens show detailed information or 3D content.
+Accessed by navigating from other screens.
+
+================================================================================
+SCREEN 10: DETAIL SCREEN
+================================================================================
+
+FILE: src/screens/DetailScreen.tsx
+PURPOSE: Show comprehensive information about a single landmark
+ACCESSED: From Home, Map, Scan, or Profile screens
+
+┌─────────────────────────────────────┐
+│         [Background Image]          │
+│  ◂────────────────────────────────  │
+│         Gradient Overlay            │
+│    Badshahi Mosque                  │
+│    1.2 km away                      │
+├─────────────────────────────────────┤
+│                                     │
+│  Summary                            │
+│  The Badshahi Mosque is one of...   │
+│  (Full description text)            │
+│                                     │
+│  [View 3D Model]  (if available)    │
+│  [View 3D Image]  (if available)    │
+│                                     │
+│  [Listen · English]  [سنیں · اردو]  │
+│                                     │
+│  [Translate (English & Urdu)]       │
+│  [Download]                         │
+│                                     │
+│  Already in your saved landmarks.   │
+│                                     │
+└─────────────────────────────────────┘
+
+STEP-BY-STEP FLOW:
+
+1. SCREEN RECEIVES LANDMARK DATA
+   - Passed via route parameters
+   - Contains: name, summary, category, distance, etc.
+   - Calculates if 3D models available
+   - Prepares speech options
+
+2. HEADER SECTION
+   - Large background image of landmark
+   - Dark gradient overlay for text contrast
+   - Landmark name displayed (large)
+   - Distance or category below name
+   - Back button in top-left (dark semi-transparent)
+
+3. SCROLLABLE CONTENT
+   - ScrollView for all content below image
+   - Can scroll up to see more details
+
+4. SUMMARY CARD
+   - Section label: "Summary"
+   - Full description/history text
+   - Scrollable if very long
+
+5. ACTION BUTTONS:
+
+   "VIEW 3D MODEL" (if available):
+   - Shows if landmark has 3D GLB model
+   - Tap → Opens Model3DViewerScreen
+   - Full interactive 3D model
+   - Can rotate with finger
+   - Can zoom with pinch
+   
+   "VIEW 3D IMAGE" (if available):
+   - Shows if landmark has preview image
+   - Tap → Opens Landmark3DImageScreen
+   - Static 3D image preview
+   - Faster than full model
+   - Can zoom with pinch
+
+6. LANGUAGE BUTTONS (Two-column layout):
+   
+   "LISTEN · ENGLISH":
+   - Tap to play summary as audio
+   - English text-to-speech
+   - Shows loading spinner while generating
+   - Can play/pause audio
+   
+   "سنیں · اردو" (LISTEN URDU):
+   - Tap to play Urdu version
+   - Same button but Urdu language
+   - Uses Urdu text and voice
+
+7. TRANSLATION BUTTON:
+   - "Translate (English & Urdu)"
+   - Opens TranslationModal component
+   - Shows full bilingual view
+   - English on left, Urdu on right
+   - Can read side-by-side
+   - Shows loading while translating
+
+8. DOWNLOAD BUTTON:
+   - "Download"
+   - Offline audio and text bundle
+   - Saves to device
+   - Can use without internet
+   - Shows confirmation alert
+
+9. SAVED STATUS MESSAGE:
+   - If landmark already saved:
+     * Shows: "Already in your saved landmarks"
+     * Button not needed (already saved)
+   - If not saved:
+     * Save button available on scan result
+
+KEY FEATURES:
+- Full landmark information
+- 3D model viewing
+- Bilingual content
+- Text-to-speech audio
+- Side-by-side translation
+- Download for offline
+- Rich media support
+
+================================================================================
+SCREEN 11: MODEL 3D VIEWER SCREEN
+================================================================================
+
+FILE: src/screens/Model3DViewerScreen.tsx
+PURPOSE: Display interactive 3D model of landmark
+ACCESSED: From Detail Screen via "View 3D Model" button
+
+┌─────────────────────────────────────┐
+│  ◂ Badshahi Mosque                  │
+│     3D model · drag to explore   [⋯]│
+│                                     │
+│  ┌─────────────────────────────────┐
+│  │                                 │
+│  │      [3D Model Here]            │
+│  │   (Interactive GLB model)       │
+│  │                                 │
+│  │   Drag to rotate               │
+│  │   Pinch to zoom                │
+│  │                                 │
+│  └─────────────────────────────────┘
+│                                     │
+│  Pinch to zoom · one finger rotate │
+└─────────────────────────────────────┘
+
+STEP-BY-STEP FLOW:
+
+1. MODEL LOADING
+   - Gets landmark slug from route params
+   - Looks up 3D model file
+   - If model found: Loads GLB/GLTF file
+   - If not found: Shows error message
+
+2. HEADER
+   - Back button (dark semi-transparent circle)
+   - Landmark name in center
+   - Subtitle: "3D model · drag to explore"
+
+3. 3D VIEWER COMPONENT
+   - Uses Three.js rendering
+   - LandmarkModelViewer handles rendering
+   - Black background for focus
+   - Model centered in viewport
+
+4. USER INTERACTIONS:
+
+   ONE FINGER DRAG:
+   - Drag left/right: Rotate model around Y axis
+   - Drag up/down: Rotate model around X axis
+   - Smooth continuous rotation
+   - Follows finger movement
+   
+   PINCH GESTURE:
+   - Two fingers pinch inward: Zoom out
+   - Two fingers spread outward: Zoom in
+   - Minimum zoom: 1x (normal)
+   - Maximum zoom: 3x (very close)
+   
+   DOUBLE TAP:
+   - Resets model to center
+   - Returns to original zoom
+   - Useful after zooming far in
+
+5. FOOTER HINT
+   - "Pinch to zoom · one finger to rotate"
+   - Reminds user of controls
+
+6. ERROR HANDLING:
+   - If model file not found:
+     * Shows icon and error message
+     * "No 3D model is available yet"
+     * "Go back" button returns to previous screen
+   - If model fails to load during render:
+     * Calls onError handler
+     * Shows error message
+   - If loading:
+     * Shows spinner
+
+7. BACK HANDLING:
+   - Android back button: Returns to Detail
+   - Back button tap: Returns to Detail
+   - If can't go back: Goes to MainTabs
+
+KEY FEATURES:
+- Full 3D model interaction
+- Smooth touch controls
+- Zoom functionality
+- Rotation support
+- Error recovery
+- Offline models
+- Touch optimization
+
+TECHNICAL:
+- GLB format models
+- Three.js library
+- Touch event handling
+- Model loading from assets
+
+================================================================================
+SCREEN 12: LANDMARK 3D IMAGE SCREEN
+================================================================================
+
+FILE: src/screens/Landmark3DImageScreen.tsx
+PURPOSE: Display static 3D image preview of landmark
+ACCESSED: From Detail Screen via "View 3D Image" button
+
+┌─────────────────────────────────────┐
+│  ◂ Badshahi Mosque                  │
+│     3D image preview            [⋯] │
+│                                     │
+│  ┌─────────────────────────────────┐
+│  │                                 │
+│  │       [3D Image Here]           │
+│  │   (Static image preview)        │
+│  │                                 │
+│  │   Can pinch to zoom            │
+│  │                                 │
+│  └─────────────────────────────────┘
+│                                     │
+│  Pinch to zoom · Replace mock in... │
+└─────────────────────────────────────┘
+
+STEP-BY-STEP FLOW:
+
+1. IMAGE LOADING
+   - Gets landmark slug from route params
+   - Looks up 3D image source
+   - Uses expo-image for fast loading
+   - Displays image in center
+
+2. HEADER
+   - Back button
+   - Landmark name
+   - Subtitle: "3D image preview"
+
+3. IMAGE DISPLAY (ScrollView)
+   - Image centered vertically and horizontally
+   - Full width available
+   - Height: Fixed aspect ratio
+   - Uses expo-image for optimization
+
+4. USER INTERACTIONS:
+
+   PINCH GESTURE:
+   - Pinch in: Zoom out
+   - Pinch out: Zoom in
+   - minimumZoomScale: 1x
+   - maximumZoomScale: 3x
+   - Smooth zoom animation
+   
+   PAN/DRAG:
+   - Can pan around zoomed image
+   - Useful when zoomed in to see details
+
+5. FOOTER
+   - "Pinch to zoom" instructions
+   - Note: "Replace mock file in assets/images/3d/"
+
+6. BACK HANDLING:
+   - Android back button: Returns to Detail
+   - Back button tap: Returns to Detail
+
+KEY FEATURES:
+- Fast image display
+- Pinch-to-zoom
+- Panning support
+- Lightweight compared to 3D model
+- Quick preview option
+- Easy image replacement
+
+================================================================================
+SCREEN 13: ADMIN USERS SCREEN
+================================================================================
+
+FILE: src/screens/AdminUsersScreen.tsx
+PURPOSE: Admin panel to manage user accounts
+ACCESSED: From Profile Screen (only visible to admin users)
+
+┌─────────────────────────────────────┐
+│  [Loading Spinner]                  │
+│  or                                 │
+│  [Pull to refresh indicator]        │
+│                                     │
+│  User List:                         │
+│  ┌─────────────────────────────────┐
+│  │ [A] Ahmed Khan                  │
+│  │     ahmed@example.com           │
+│  │     Admin · Verified · Active   │
+│  │     Joined 2024-01-15        [⋯]│
+│  │     [Cannot modify yourself]    │
+│  └─────────────────────────────────┘
+│                                     │
+│  ┌─────────────────────────────────┐
+│  │ [F] Fatima Khan                 │
+│  │     fatima@example.com          │
+│  │     User · Verified · Active    │
+│  │     Joined 2024-02-20           │
+│  │     [Block] [Delete]            │
+│  └─────────────────────────────────┘
+│                                     │
+│  ┌─────────────────────────────────┐
+│  │ [M] Mohammed Ali                │
+│  │     ahmed@example.com           │
+│  │     User · Unverified · Blocked │
+│  │     Joined 2024-03-10           │
+│  │     [Unblock] [Delete]          │
+│  └─────────────────────────────────┘
+│                                     │
+└─────────────────────────────────────┘
+
+STEP-BY-STEP FLOW:
+
+1. ACCESS CONTROL
+   - Only visible to users with role: "admin"
+   - Called from Profile Screen
+   - Requires admin authentication
+
+2. DATA LOADING
+   - Calls fetchAdminUsers() API
+   - Gets all users from backend
+   - Sets loading state = true
+   - Shows spinner while loading
+   - Handles errors gracefully
+
+3. PULL-TO-REFRESH
+   - User can pull down to refresh list
+   - Calls loadUsers(isRefresh: true)
+   - Shows refresh indicator
+   - Re-fetches data from backend
+   - Updates list with new data
+
+4. USER LIST (FlatList)
+   - Displays all users as cards
+   - Each card shows user information:
+     * Avatar: Circle with first letter
+     * Name
+     * Email
+     * Role: "admin" or "user"
+     * Verification status: "Verified" or "Unverified"
+     * Account status: "Active" or "Blocked"
+     * Joined date
+
+5. SPECIAL CASE: CURRENT USER
+   - If user viewing is same as card user:
+     * Shows "You" badge
+     * Highlighted differently
+     * Cannot be modified
+     * Cannot be blocked
+     * Cannot be deleted
+     * Shows note: "Cannot modify yourself"
+
+6. USER ACTIONS:
+
+   BLOCK USER:
+   - Shows confirmation alert:
+     * "Block user?"
+     * "[Name] will not be able to sign in"
+     * Cancel or Block button
+   - Calls setUserBlocked(userId, true)
+   - Prevents user from logging in
+   - User card updates immediately
+   - Shows "Blocked" status
+
+   UNBLOCK USER:
+   - Shows confirmation alert:
+     * "Unblock user?"
+     * "[Name] will be able to use the app again"
+   - Calls setUserBlocked(userId, false)
+   - User can login again
+   - User card updates immediately
+   - Status changes to "Active"
+
+   DELETE USER:
+   - Shows destructive confirmation alert:
+     * "Delete user?"
+     * "Permanently remove [name] ([email])?"
+     * "This cannot be undone"
+     * Cancel or Delete button
+   - Calls deleteAdminUser(userId)
+   - User completely removed from database
+   - Card disappears from list
+   - Action cannot be undone
+
+7. ACTION FEEDBACK:
+   - Shows loading indicator on user card
+   - Disables action buttons during request
+   - Shows error alert if action fails
+   - Reverts if error occurs
+
+8. SAFETY FEATURES:
+   - Cannot modify current user
+   - Confirmation alerts for dangerous actions
+   - Destructive actions require explicit confirmation
+   - Error recovery
+   - Toast/alert feedback
+
+KEY FEATURES:
+- View all users
+- Filter by status (admin only)
+- Block/unblock users
+- Delete users permanently
+- Verification status tracking
+- Real-time list updates
+- Self-protection (can't modify self)
+- Pull-to-refresh
+
+ADMIN RESPONSIBILITIES:
+- Manage user accounts
+- Block spam/bad users
+- Delete test accounts
+- Monitor user status
+- Verify new accounts
+- Enforce community guidelines
+
+================================================================================
+NAVIGATION HIERARCHY
+================================================================================
+
+COMPLETE NAVIGATION TREE:
+
+┌─ APP
+   ├─ AuthStack (before login)
+   │  ├─ Login Screen
+   │  ├─ Register Screen
+   │  ├─ Forgot Password Screen
+   │  ├─ OTP Verification Screen
+   │  └─ Reset Password Screen
+   │
+   └─ MainStack (after login)
+      ├─ MainTabNavigator (bottom tab bar)
+      │  ├─ Home Tab → Home Screen
+      │  ├─ Scan Tab → Scan Screen
+      │  ├─ Map Tab → Map Screen
+      │  └─ Profile Tab → Profile Screen
+      │
+      └─ Nested Stack (modal/full screens)
+         ├─ Detail Screen (from Home/Map/Scan/Profile)
+         ├─ Model3DViewer (from Detail)
+         ├─ Landmark3DImage (from Detail)
+         └─ AdminUsers (from Profile - admin only)
+
+NAVIGATION FLOW EXAMPLES:
+
+FIRST TIME USER:
+1. App Opens → AuthStack visible
+2. Login Screen (default)
+3. Tap "Create an account" → Register Screen
+4. Fill form → Tap "Register"
+5. Auto-login → Navigates to Home Screen
+6. MainTabs visible (Home/Scan/Map/Profile)
+
+EXISTING USER:
+1. App Opens → AuthStack visible
+2. Login Screen (default)
+3. Enter email/password → Tap "Sign in"
+4. Successful → Navigates to Home Screen
+5. MainTabs visible
+
+FORGOT PASSWORD:
+1. Login Screen
+2. Tap "Forgot password?" → Forgot Password Screen
+3. Enter email → Send code
+4. → OTP Verification Screen (via alert)
+5. Enter code → Verify
+6. → Reset Password Screen
+7. Enter new password → Update
+8. → Login Screen (resets stack)
+
+SCANNING LANDMARK:
+1. Home Screen
+2. Tap "Scan" card → Scan Screen (Tab 2)
+3. Take photo → Recognition
+4. → Detail Screen (if successful)
+5. Can go back to Scan or navigate to other tabs
+
+EXPLORING LANDMARK:
+1. Home Screen
+2. Tap "Map" card → Map Screen (Tab 3)
+3. Tap landmark marker → Detail Screen
+4. View info → Optional 3D Model or 3D Image
+5. Can go back to Map or other tabs
+
+PROFILE/SAVED:
+1. Any screen → Tap Profile Tab → Profile Screen
+2. View saved landmarks
+3. Tap landmark → Detail Screen
+4. Tap trash → Remove from saved
+5. Tap "Sign out" → AuthStack (back to Login)
+
+ADMIN PANEL:
+1. Profile Screen (as admin user)
+2. Tap "Admin panel" card → Admin Users Screen
+3. View all users
+4. Block/Delete users
+5. Back arrow → Returns to Profile
+
+================================================================================
+END OF SCREENS GUIDE
+================================================================================

@@ -1,0 +1,459 @@
+================================================================================
+AI-TOURIST APP - FOLDER STRUCTURE & FILE ORGANIZATION GUIDE
+Complete guide to what each folder does and what to remove
+================================================================================
+
+ROOT LEVEL FILES:
+================================================================================
+
+app.json
+├─ PURPOSE: Expo configuration file
+├─ CONTAINS: App name, version, icons, permissions, Android/iOS settings
+├─ KEEP: YES - Essential for the app to run
+├─ MODIFIED: No need to change unless updating permissions or app info
+
+App.tsx
+├─ PURPOSE: Main entry point of the React Native application
+├─ CONTAINS: Root component that loads authentication or main app navigator
+├─ KEEP: YES - Required entry point
+├─ MODIFIED: No, this is good
+
+babel.config.js
+├─ PURPOSE: Babel configuration for transpiling JavaScript/TypeScript
+├─ CONTAINS: Plugin configuration for React Native and Metro bundler
+├─ KEEP: YES - Required for build process
+├─ MODIFIED: No, standard Expo configuration
+
+eslint.config.js
+├─ PURPOSE: ESLint configuration for code quality and style
+├─ CONTAINS: Rules for code formatting and error detection
+├─ KEEP: YES - Helps maintain code quality
+├─ MODIFIED: Can add more rules if needed
+
+metro.config.js
+├─ PURPOSE: Metro bundler configuration (React Native build tool)
+├─ CONTAINS: Asset handling, extraNodeModules, watch folders
+├─ KEEP: YES - Required for development server
+├─ MODIFIED: No, standard configuration
+
+package.json
+├─ PURPOSE: Node package manager configuration
+├─ CONTAINS: Dependencies, dev dependencies, scripts, project metadata
+├─ KEEP: YES - Essential for npm/yarn
+├─ MODIFIED: Only when adding/removing dependencies
+
+package-lock.json
+├─ PURPOSE: Locks specific versions of dependencies
+├─ CONTAINS: Exact versions of all installed packages
+├─ KEEP: YES - Ensures consistent installations
+├─ MODIFIED: Auto-updated by npm
+
+tsconfig.json
+├─ PURPOSE: TypeScript configuration
+├─ CONTAINS: Compiler options, strict mode, path aliases
+├─ KEEP: YES - Required for TypeScript support
+├─ MODIFIED: No, good configuration
+
+README.md
+├─ PURPOSE: Project documentation and setup instructions
+├─ CONTAINS: How to run, features, deployment info
+├─ KEEP: YES - Important for project documentation
+├─ MODIFIED: Yes, should be updated with latest features
+
+test-login.json
+├─ PURPOSE: Test credentials for development/testing
+├─ CONTAINS: Sample login email and password for testing
+├─ KEEP: YES - Useful for testing but should not be committed
+├─ MODIFY: Add to .gitignore to prevent accidental commit
+├─ NOTE: Make sure real credentials are never in this file
+
+================================================================================
+DIRECTORY STRUCTURE EXPLANATION
+================================================================================
+
+📦 PROJECT_ROOT/
+│
+├─ 📁 .expo/ (KEEP - Auto-created by Expo)
+│  └─ Hidden folder for Expo CLI data
+│
+├─ 📁 .git/ (KEEP - Version control)
+│  └─ Git repository history
+│
+├─ 📁 .vscode/ (KEEP - Editor settings)
+│  └─ VS Code workspace configurations
+│
+├─ 📁 node_modules/ (KEEP - Auto-generated)
+│  └─ All installed npm packages
+│  └─ NOTE: Never commit this, it's in .gitignore
+│
+├─ 📁 assets/ (KEEP - App Resources)
+│  └─ 📁 images/
+│     ├─ icon.png - App icon
+│     ├─ favicon.png - Web favicon
+│     ├─ 3d/ - 3D model preview images
+│     └─ Android assets (adaptive icons)
+│
+├─ 📁 src/ (KEEP - MAIN SOURCE CODE)
+│  ├─ config.ts - API endpoints and configuration
+│  │
+│  ├─ 📁 components/ - Reusable UI components
+│  │  ├─ AppLogo.tsx - Logo display
+│  │  ├─ LandmarkModelViewer.tsx - 3D model viewer
+│  │  ├─ MapCategoryChips.tsx - Map filter buttons
+│  │  ├─ ModelErrorBoundary.tsx - Error handling wrapper
+│  │  ├─ PressableCard.tsx - Touchable card component
+│  │  ├─ PrimaryButton.tsx - Main button component
+│  │  ├─ ResultCard.tsx - Scan result display
+│  │  ├─ ScannerOverlay.tsx - Camera scanner frame
+│  │  ├─ ScreenBackground.tsx - Screen background wrapper
+│  │  ├─ TextField.tsx - Input field with validation
+│  │  └─ TranslationModal.tsx - English/Urdu translation display
+│  │
+│  ├─ 📁 constants/ - Fixed values and theme
+│  │  ├─ landmark3dImages.ts - 3D image asset references
+│  │  ├─ landmarkCoordinates.ts - GPS coordinates of landmarks
+│  │  ├─ landmarkImages.ts - Landmark photo references
+│  │  ├─ landmarkModels.ts - 3D model file references
+│  │  ├─ landmarkUrduContent.ts - Urdu translations
+│  │  ├─ mapFilters.ts - Available map filter categories
+│  │  └─ theme.ts - Colors, spacing, shadows, fonts
+│  │
+│  ├─ 📁 context/ - Global state management
+│  │  ├─ AuthContext.tsx - User authentication state
+│  │  └─ SavedLandmarksContext.tsx - User saved landmarks
+│  │
+│  ├─ 📁 hooks/ - Custom React hooks
+│  │  ├─ useBilingualLandmark.ts - Translation & TTS
+│  │  ├─ useLandmarks.ts - Fetch landmarks from API
+│  │  └─ useUserLocation.ts - Get device location
+│  │
+│  ├─ 📁 navigation/ - Screen routing setup
+│  │  ├─ AppNavigator.tsx - Root navigation config
+│  │  ├─ AuthStackNavigator.tsx - Login/Register screens flow
+│  │  └─ MainTabNavigator.tsx - Home/Scan/Map/Profile tabs
+│  │
+│  ├─ 📁 screens/ (13 screens - one for each page)
+│  │  ├─ AdminUsersScreen.tsx - Admin user management
+│  │  ├─ authScreens.ts - Auth screen types (helper file)
+│  │  ├─ DetailScreen.tsx - Landmark details page
+│  │  ├─ ForgotPasswordScreen.tsx - Password reset start
+│  │  ├─ HomeScreen.tsx - Main dashboard
+│  │  ├─ Landmark3DImageScreen.tsx - 3D preview
+│  │  ├─ LoginScreen.tsx - Sign in page
+│  │  ├─ MapScreen.tsx - Interactive map
+│  │  ├─ Model3DViewerScreen.tsx - Full 3D viewer
+│  │  ├─ OtpVerificationScreen.tsx - OTP code entry
+│  │  ├─ ProfileScreen.tsx - User profile & saved items
+│  │  ├─ RegisterScreen.tsx - Sign up page
+│  │  ├─ ResetPasswordScreen.tsx - New password entry
+│  │  └─ ScanScreen.tsx - Camera landmark scanning
+│  │
+│  ├─ 📁 services/ - Backend API calls & business logic
+│  │  ├─ adminService.ts - Admin user management API
+│  │  ├─ api.ts - Main API client setup
+│  │  ├─ landmarkService.ts - Landmark data processing
+│  │  ├─ mockCredentialStore.ts - Mock login data (DEV)
+│  │  ├─ mockPasswordReset.ts - Mock password reset (DEV)
+│  │  ├─ nearbyHotelsService.ts - Hotel location fetching
+│  │  ├─ network.ts - Network status detection
+│  │  ├─ passwordResetService.ts - Password reset logic
+│  │  ├─ translateMock.ts - Mock translations (DEV)
+│  │  ├─ translationService.ts - Urdu translation API
+│  │  ├─ ttsService.ts - Text-to-speech audio
+│  │  └─ validation.ts - Form input validation
+│  │
+│  ├─ 📁 types/ - TypeScript type definitions
+│  │  ├─ admin.ts - Admin user types
+│  │  ├─ assets.d.ts - Asset file type declarations
+│  │  ├─ auth.ts - Authentication types
+│  │  ├─ hotel.ts - Hotel data types
+│  │  ├─ landmark.ts - Landmark data types
+│  │  └─ navigation.ts - Screen navigation types
+│  │
+│  └─ 📁 utils/ - Utility functions
+│     ├─ geo.ts - Geographic calculations
+│     └─ loadGlbFromModule.ts - 3D model loading helper
+│
+├─ 📁 app/ (AUTO-GENERATED - KEEP BUT EMPTY)
+│  └─ Created by Expo for routing - currently empty
+│  └─ Can be deleted if using traditional navigation
+│  └─ DECISION: Can keep or delete (doesn't affect functionality)
+│
+└─ 📁 app-example/ (❌ REMOVE - UNNECESSARY)
+   └─ This is example/template code from Expo starter
+   └─ NOT used in your actual project
+   └─ All real code is in /src/ folder
+   └─ **RECOMMENDATION: DELETE THIS FOLDER**
+
+================================================================================
+FOLDER PURPOSES - DETAILED BREAKDOWN
+================================================================================
+
+src/components/
+─────────────────
+PURPOSE: Reusable UI building blocks used across multiple screens
+CONTAINS: Buttons, input fields, cards, overlays, modals
+ORGANIZED: By functionality (not by screen)
+BENEFIT: Update a component once, all screens using it update automatically
+
+src/constants/
+──────────────
+PURPOSE: Fixed data that doesn't change during app runtime
+CONTAINS: Colors/theme, landmark coordinates, images, categories
+USAGE: Imported by components and screens
+BENEFIT: Centralized configuration - easy to update global settings
+
+src/context/
+────────────
+PURPOSE: Global state management (user data, saved items)
+CONTAINS: AuthContext (who's logged in), SavedLandmarksContext (favorites)
+USAGE: Used with useContext() hooks throughout the app
+BENEFIT: User data available in any screen without prop drilling
+
+src/hooks/
+──────────
+PURPOSE: Reusable logic that can be shared between screens
+CONTAINS: Fetch data, get location, handle translations
+PATTERN: Custom React hooks starting with "use"
+BENEFIT: Keep screens clean, extract complex logic
+
+src/navigation/
+───────────────
+PURPOSE: Define which screens exist and how to navigate between them
+CONTAINS: Stack navigators, tab navigators, route configuration
+STRUCTURE: 
+  - AuthStackNavigator: Login → Register → Forgot → OTP → Reset
+  - MainTabNavigator: Home, Scan, Map, Profile tabs
+  - AppNavigator: Combines auth + main navigation
+BENEFIT: Centralized routing logic
+
+src/screens/
+────────────
+PURPOSE: Individual page/screen components
+ONE SCREEN = ONE FILE (mostly)
+COUNT: 13 different screens
+NAMING: Matches what appears on device (LoginScreen, HomeScreen, etc.)
+
+src/services/
+─────────────
+PURPOSE: Backend communication and business logic
+CONTAINS: 
+  - API calls to server
+  - Mock/demo data for offline mode
+  - Validation functions
+  - Form processing
+SEPARATION: Keeps screens clean, logic in services
+BENEFIT: Easy to test, easy to switch backends
+
+src/types/
+──────────
+PURPOSE: TypeScript type definitions
+USED FOR: Type safety, autocomplete, error detection
+CONTAINS: Interfaces for User, Landmark, Hotel, etc.
+BENEFIT: Catch errors at development time, not runtime
+
+src/utils/
+──────────
+PURPOSE: Small utility functions
+CONTAINS: Math calculations, helper functions
+EXAMPLES: Distance formatting, 3D model loading
+
+================================================================================
+FILES & FOLDERS TO REMOVE (CLEANUP)
+================================================================================
+
+🗑️ REMOVE: app-example/ folder
+─────────────────────────────────
+REASON: 
+  ✗ This is template/example code from Expo starter
+  ✗ Not used anywhere in your actual project
+  ✗ All real code is in /src/ folder
+  ✗ Taking up disk space and causing confusion
+  ✗ Has duplicate component definitions
+
+SIZE: ~50-100 KB
+ACTION: Delete this entire folder
+
+🗑️ REMOVE: app/ folder (optional)
+──────────────────────────────────
+REASON:
+  ? Currently empty
+  ? Created automatically by Expo
+  ? Only needed if using Expo Router (file-based routing)
+  ? Your project uses traditional React Navigation
+  
+SIZE: ~1 KB
+ACTION: Can delete if you're sure you won't use Expo Router
+        If unsure, keep it (doesn't hurt)
+
+⚠️ REVIEW: test-login.json
+───────────────────────────
+REASON:
+  ? Contains test credentials
+  ? Should not be committed to git
+  ? Could be security risk in production
+
+ACTION:
+  1. Keep the file locally for testing
+  2. Add to .gitignore (if not already):
+     echo test-login.json >> .gitignore
+  3. Consider moving credentials to .env file instead
+
+⚠️ REVIEW: mock* services
+──────────────────────────
+FILES:
+  - src/services/mockCredentialStore.ts
+  - src/services/mockPasswordReset.ts
+  - src/services/translateMock.ts
+
+PURPOSE: Demo/offline functionality for development
+ACTION:
+  - Keep during development (helpful for testing)
+  - Before release: Remove or gated behind a DEV flag
+  - Or leave if you want offline demo mode
+
+================================================================================
+RECOMMENDED CLEANUP ACTION PLAN
+================================================================================
+
+STEP 1: Delete app-example folder (DEFINITELY REMOVE)
+───────────────────────────────────────────────────
+Windows:
+  - Right-click app-example folder
+  - Select "Delete" 
+  - OR use: rmdir /s app-example
+
+Command line:
+  rmdir /s /q app-example
+
+GIT:
+  git rm -r app-example
+  git commit -m "Remove unused app-example template folder"
+
+
+STEP 2: Update .gitignore
+─────────────────────────
+Add these lines if not present:
+
+# Sensitive data
+test-login.json
+
+# Dependencies
+node_modules/
+package-lock.json
+
+# Expo
+.expo/
+.expo-shared/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build
+.eas/
+dist/
+
+
+STEP 3: Verify app/ folder
+──────────────────────────
+If you're not using Expo Router (file-based routing):
+  - Can safely delete app/ folder
+  - Your project uses AppNavigator.tsx instead
+
+If you plan to use Expo Router later:
+  - Keep app/ folder
+  - Migrate navigation structure to it
+
+
+STEP 4: Optional - Create .env file
+──────────────────────────────────
+Instead of test-login.json, use environment variables:
+
+Create: .env file
+Add:
+  API_URL=http://192.168.2.101:5000
+  TEST_EMAIL=test@example.com
+  TEST_PASSWORD=password123
+
+Then add to .gitignore:
+  .env
+  .env.local
+
+
+STEP 5: Summary of disk space freed
+────────────────────────────────────
+Before cleanup:
+- node_modules/: ~300 MB (already auto-generated)
+- app-example/: ~100 KB
+- Total unnecessary: ~100 KB
+
+After cleanup:
+- Project size reduced
+- Less confusion in folder structure
+- Cleaner git history
+
+
+================================================================================
+FINAL PROJECT STRUCTURE (AFTER CLEANUP)
+================================================================================
+
+✅ ai-tourist/
+├─ 📁 .expo/
+├─ 📁 .git/
+├─ 📁 .vscode/
+├─ 📁 assets/
+├─ 📁 src/ ⭐ (ALL YOUR CODE HERE)
+├─ 📁 node_modules/
+├─ 📄 app.json
+├─ 📄 App.tsx
+├─ 📄 APP_CODE_EXPLANATION.txt
+├─ 📄 babel.config.js
+├─ 📄 eslint.config.js
+├─ 📄 metro.config.js
+├─ 📄 package.json
+├─ 📄 package-lock.json
+├─ 📄 tsconfig.json
+├─ 📄 README.md
+├─ 📄 .gitignore
+├─ 📄 .env (optional)
+└─ ✂️ app-example/ (DELETED)
+└─ ✂️ app/ (DELETED - optional)
+
+================================================================================
+SUMMARY
+================================================================================
+
+ACTUAL PROJECT CODE:
+  ✅ Everything in /src/ folder
+  ✅ ALL 13 screens are functional
+  ✅ Services handle backend communication
+  ✅ Components are reusable
+  ✅ Types provide safety
+  ✅ Hooks encapsulate logic
+
+UNNECESSARY ITEMS:
+  ❌ app-example/ → REMOVE (just example code)
+  ⚠️ app/ → OPTIONAL (keep if unsure, delete if using traditional navigation)
+  ⚠️ test-login.json → Needs .gitignore
+
+ORGANIZATION:
+  ✅ Well-structured
+  ✅ Scalable architecture
+  ✅ Easy to find code
+  ✅ Ready for production
+
+NEXT STEPS:
+  1. Delete app-example folder
+  2. Check/update .gitignore
+  3. Consider env file for test credentials
+  4. Ready for deployment!
+
+================================================================================
+END OF GUIDE
+================================================================================

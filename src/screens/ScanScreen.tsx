@@ -18,6 +18,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AppLogo } from "../components/AppLogo";
 import { ResultCard } from "../components/ResultCard";
+import { SpeechStopBar } from "../components/SpeechStopBar";
 import { TranslationModal } from "../components/TranslationModal";
 import { ScreenBackground } from "../components/ScreenBackground";
 import { ScannerOverlay } from "../components/ScannerOverlay";
@@ -29,6 +30,7 @@ import {
   type ApiLandmark,
 } from "../services/landmarkService";
 import { useBilingualLandmark } from "../hooks/useBilingualLandmark";
+import { useStopSpeechOnBlur } from "../hooks/useStopSpeechOnBlur";
 import type { LandmarkRecognitionResult } from "../types/landmark";
 import type { AppStackParamList, MainTabParamList } from "../types/navigation";
 
@@ -51,6 +53,7 @@ export function ScanScreen() {
     closeTranslation,
     listen,
   } = useBilingualLandmark();
+  useStopSpeechOnBlur();
   const pulse = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
@@ -232,6 +235,7 @@ export function ScanScreen() {
       ) : null}
 
       <View style={styles.bottomArea}>
+        <SpeechStopBar />
         {result ? (
           <ResultCard
             result={result}

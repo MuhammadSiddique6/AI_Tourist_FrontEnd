@@ -14,6 +14,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { PrimaryButton } from "../components/PrimaryButton";
+import { SpeechStopBar } from "../components/SpeechStopBar";
 import { TranslationModal } from "../components/TranslationModal";
 import { normalizeLandmarkKey } from "../constants/landmarkImages";
 import { hasLandmark3dImage } from "../constants/landmark3dImages";
@@ -21,6 +22,7 @@ import { hasLandmarkModel } from "../constants/landmarkModels";
 import { colors, radii, shadows } from "../constants/theme";
 import { useSavedLandmarks } from "../context/SavedLandmarksContext";
 import { useBilingualLandmark } from "../hooks/useBilingualLandmark";
+import { useStopSpeechOnBlur } from "../hooks/useStopSpeechOnBlur";
 import { getLandmarkImageSource } from "../services/landmarkService";
 import type { AppStackParamList } from "../types/navigation";
 
@@ -40,6 +42,7 @@ export function DetailScreen() {
     closeTranslation,
     listen,
   } = useBilingualLandmark();
+  useStopSpeechOnBlur();
 
   const summary = landmark.summary;
 
@@ -122,6 +125,8 @@ export function DetailScreen() {
           <Text style={styles.sectionLabel}>Summary</Text>
           <Text style={styles.cardBody}>{summary}</Text>
         </View>
+
+        <SpeechStopBar />
 
         <View style={styles.actions}>
           {canView3DModel ? (

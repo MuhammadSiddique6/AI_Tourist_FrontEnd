@@ -1,0 +1,779 @@
+================================================================================
+AI-TOURIST REACT NATIVE APP - CODE EXPLANATION
+Complete guide to every screen and how the code works
+================================================================================
+
+TABLE OF CONTENTS:
+1. App Overview
+2. Authentication Screens
+3. Main App Screens
+4. 3D Viewer Screens
+5. Admin Screen
+6. Navigation Flow
+
+================================================================================
+1. APP OVERVIEW
+================================================================================
+
+This is an AI-Based Tourist Companion app built with React Native/Expo that helps
+users scan landmarks, translate content, view them in 3D, and explore nearby sites
+on a map.
+
+KEY FEATURES:
+- User authentication (Login, Register, Password Reset)
+- Landmark scanning with AI recognition
+- Bilingual content (English & Urdu)
+- 3D model viewer
+- Interactive map with nearby hotels
+- Saved landmarks collection
+- Admin panel for user management
+
+================================================================================
+2. AUTHENTICATION SCREENS
+================================================================================
+
+----------------------------
+2.1 LOGIN SCREEN (LoginScreen.tsx)
+----------------------------
+
+PURPOSE: Allow users to sign into the app with email and password
+
+HOW IT WORKS:
+
+1. STATE MANAGEMENT:
+   - email: Stores the user's email input
+   - password: Stores the user's password input
+   - errors: Stores validation errors for each field
+   - submitting: Tracks if login request is in progress
+
+2. KEY FUNCTIONS:
+
+   onSubmit():
+   - User taps the "Sign in" button
+   - Keyboard is dismissed
+   - Input validation runs (validateLogin function checks email format & password)
+   - If errors exist, they are displayed next to the input fields
+   - If validation passes, API call is made to api.auth.login()
+   - Backend returns user data and authentication token
+   - login() context function is called to save user session
+   - User is navigated to main app
+
+   clearFieldError():
+   - When user starts typing to fix an error, the error message disappears
+   - Makes UX smoother by not keeping stale error messages
+
+3. UI COMPONENTS:
+   - AppLogo: Displays the AI-tourist logo at top
+   - ScreenBackground: Sets background color/styling
+   - TextField: Custom input fields for email and password
+   - PrimaryButton: Sign in button
+   - Navigation link to Register and Forgot Password screens
+
+4. KEY FEATURES:
+   - Auto-focus between fields (email → password)
+   - Keyboard management to avoid covering input
+   - Safe area handling for different devices
+   - ScrollView allows content to scroll if keyboard is open
+
+----------------------------
+2.2 REGISTER SCREEN (RegisterScreen.tsx)
+----------------------------
+
+PURPOSE: Allow new users to create an account
+
+HOW IT WORKS:
+
+1. STATE MANAGEMENT:
+   - displayName: User's chosen display name
+   - email: User's email address
+   - password: User's password
+   - errors: Validation errors
+   - submitting: Loading state during registration
+
+2. KEY FUNCTIONS:
+
+   onSubmit():
+   - Validates all three fields (displayName, email, password)
+   - If validation passes:
+     * Calls api.auth.register() to create account on backend
+     * Then immediately calls api.auth.login() to sign in the new user
+     * Extracts user data from response
+     * Calls login() context to save session
+     * User is automatically logged in and navigated to main app
+
+   clearFieldError():
+   - Same as login screen - removes error message when user starts correcting
+
+3. UI FLOW:
+   - Back button allows user to return to login screen
+   - Three input fields with tab navigation between them
+   - Display name → Email → Password progression
+   - Register button submits form
+
+----------------------------
+2.3 FORGOT PASSWORD SCREEN (ForgotPasswordScreen.tsx)
+----------------------------
+
+PURPOSE: Start password reset process by requesting OTP code
+
+HOW IT WORKS:
+
+1. STATE MANAGEMENT:
+   - email: Email address to reset password for
+   - errors: Validation errors
+   - loading: Request in progress
+
+2. KEY FUNCTION:
+
+   onSendCode():
+   - User enters email and taps "Send code to email"
+   - Email is validated
+   - Calls api to request password reset OTP
+   - Backend sends email with 6-digit code
+   - If in offline/mock mode, code is displayed in alert
+   - User can then proceed to OTP verification screen
+
+3. USER FLOW:
+   Back → Enter Email → Send Code → OTP Verification
+
+----------------------------
+2.4 OTP VERIFICATION SCREEN (OtpVerificationScreen.tsx)
+----------------------------
+
+PURPOSE: Verify the 6-digit code sent to user's email
+
+HOW IT WORKS:
+
+1. STATE MANAGEMENT:
+   - otp: The 6-digit code user enters
+   - errors: Validation errors
+   - loading: Request in progress
+   - resendLoading: Resend code request in progress
+
+2. KEY FUNCTIONS:
+
+   onVerify():
+   - User enters 6-digit code
+   - Validates that it's a valid format (6 digits)
+   - Calls verifyOtpForReset() to check code against email
+   - If valid: navigates to ResetPassword screen with email and otp_code
+   - If invalid: shows error message
+
+   onResend():
+   - User can tap "Resend code to email" if they don't receive it
+   - Calls resendPasswordResetOtp() to send new code
+   - Shows alert with code (in offline mode)
+
+3. SECURITY:
+   - Code is validated against the email it was sent to
+   - Codes have expiration time
+   - Invalid codes show generic error message
+
+----------------------------
+2.5 RESET PASSWORD SCREEN (ResetPasswordScreen.tsx)
+----------------------------
+
+PURPOSE: Allow user to set a new password after verifying OTP
+
+HOW IT WORKS:
+
+1. STATE MANAGEMENT:
+   - password: New password user enters
+   - confirmPassword: Password confirmation (must match)
+   - errors: Validation errors
+   - submitting: Request in progress
+
+2. SECURITY CHECK:
+   - On mount, checks if otp_code exists in route params
+   - If missing (expired session), alerts user and returns to Forgot Password
+   - Prevents unauthorized password resets
+
+3. KEY FUNCTION:
+
+   onSubmit():
+   - Validates both passwords match and are strong enough
+   - Calls completePasswordReset() with email, otp_code, and new password
+   - Backend updates password in database
+   - Resets navigation stack and returns user to Login screen
+   - Shows success alert
+
+4. USER FLOW:
+   Forgot Password → OTP Verification → Reset Password → Login
+
+================================================================================
+3. MAIN APP SCREENS (After login - user sees these)
+================================================================================
+
+----------------------------
+3.1 HOME SCREEN (HomeScreen.tsx)
+----------------------------
+
+PURPOSE: Dashboard showing personalized welcome, quick actions, and featured landmarks
+
+HOW IT WORKS:
+
+1. STATE MANAGEMENT:
+   - landmarks: Array of all available landmarks (loaded via useLandmarks hook)
+   - saved: Array of user's saved landmarks (from SavedLandmarksContext)
+   - loading: Data is loading
+   - error: Error message if data fetch failed
+
+2. KEY SECTIONS:
+
+   A. GREETING SECTION:
+   - Displays dynamic greeting based on time of day
+   - Shows personalized "Welcome back, [Name]"
+   - Shows user avatar with first letter of name
+
+   B. ACTION CARDS:
+   - Two animated cards: "Scan" and "Map"
+   - Uses Animated.Value to create spring animations
+   - When pressed, cards scale down to 0.96x (haptic feedback)
+   - Spring back to normal size when released
+   - handlePressIn: Scales card down
+   - handlePressOut: Scales card back up
+
+   Scan Card: Navigates to ScanScreen for landmark recognition
+   Map Card: Navigates to MapScreen for exploration
+
+   C. STATS CARD:
+   - Shows three statistics divided by lines:
+     * Number of saved landmarks
+     * Total landmarks available
+     * Number of landmark categories
+   - Uses divider elements for visual separation
+
+   D. FEATURED LANDMARKS SECTION:
+   - Shows top 3 landmarks from database
+   - Each landmark is displayed in PressableCard
+   - Tapping opens DetailScreen for that landmark
+   - Uses different accent colors for visual variety
+   - "See all" link navigates to Map screen
+
+   E. ERROR HANDLING:
+   - If data fails to load, shows error message
+   - "Tap to retry" allows user to refresh data
+
+3. RENDERING LOGIC:
+   - useMemo optimizes featured landmarks calculation
+   - Only re-calculates when landmarks array changes
+   - Loading spinner shows while data is fetched
+
+----------------------------
+3.2 SCAN SCREEN (ScanScreen.tsx)
+----------------------------
+
+PURPOSE: Use device camera to photograph landmarks and recognize them with AI
+
+HOW IT WORKS:
+
+1. CAMERA SETUP:
+   - Requests camera permissions on first use
+   - If denied, shows permission request screen
+   - Uses expo-camera CameraView component
+   - Displays dark overlay with scanner frame animation
+
+2. SCANNER INTERFACE:
+
+   Top Bar (Status Pill):
+   - Shows location: "Lahore, Pakistan"
+   - Shows "Offline ready" status
+   - Fixed position above camera feed
+
+   Bottom Area:
+   - Result card (if landmark detected) OR hint text
+   - Circular shutter button in center
+   - Expanding outer ring animation on press
+
+   Loading State:
+   - Pulsing loading indicator while recognizing
+   - Animated scale effect (1 → 1.08 → 1)
+   - Loops until recognition completes
+
+3. KEY FUNCTION:
+
+   onScan():
+   - User taps shutter button
+   - launchCameraAsync() opens camera
+   - Photo is captured with 0.7 quality
+   - File is sent to api.ai.recognize() endpoint
+   - Backend runs ML model to identify landmark
+   - Returns prediction confidence and landmark data
+   - If landmark found in database:
+     * Maps API response to recognition result format
+     * Displays ResultCard with landmark info
+   - If landmark not in database:
+     * Shows alert with detected label and confidence %
+   - If no landmark detected:
+     * Shows "No landmark could be recognized" message
+
+4. RESULT CARD FEATURES (After recognition):
+   - Landmark name, category, distance, confidence %
+   - "Details" button → Opens DetailScreen
+   - "Listen · English" → Text-to-speech in English
+   - "سنیں · اردو" (Listen in Urdu) → Text-to-speech in Urdu
+   - "Translate" → Opens translation modal
+   - "Save" → Adds to saved landmarks collection
+
+5. ERROR HANDLING:
+   - Camera permission denied: Shows permission request
+   - Network error: Shows alert with error message
+   - Unrecognized landmark: Shows alert with label if available
+
+----------------------------
+3.3 DETAIL SCREEN (DetailScreen.tsx)
+----------------------------
+
+PURPOSE: Display comprehensive information about a single landmark
+
+HOW IT WORKS:
+
+1. ROUTE PARAMETERS:
+   - Receives landmark object from navigation
+   - Extracts landmark data: name, summary, category, distance, etc.
+
+2. HEADER SECTION:
+   - Large image of landmark (from getLandmarkImageSource)
+   - Dark gradient overlay on top of image
+   - Back button in top-left corner
+   - Landmark name and category/distance displayed over image
+
+3. MAIN CONTENT (ScrollView):
+
+   A. SUMMARY CARD:
+   - Text description of the landmark
+   - Scrollable if content is long
+
+   B. ACTION BUTTONS:
+   
+   - "View 3D Model": Shows if landmark has 3D model
+     * Navigates to Model3DViewerScreen
+     * Only available for landmarks with 3D assets
+
+   - "View 3D Image": Shows if landmark has 3D image preview
+     * Navigates to Landmark3DImageScreen
+     * Quick preview without loading full 3D model
+
+   - "Listen · English": Plays audio summary in English
+     * Uses text-to-speech service
+     * Calls listen(summary, "en", speechOptions)
+
+   - "سنیں · اردو" (Listen in Urdu): Plays audio in Urdu
+     * Same function with language parameter "ur"
+     * Uses Urdu text-to-speech
+
+   - "Translate": Opens modal showing English + Urdu side-by-side
+     * Loads translated content from backend
+     * Shows loading spinner while translating
+
+   - "Download": Saves landmark offline bundle
+     * Offline audio and text saved to device
+     * Shows confirmation alert
+
+4. SAVED STATUS:
+   - If landmark already in saved collection:
+     * Shows "Already in your saved landmarks" message
+   - If not saved, user can download to add it
+
+5. TRANSLATION MODAL:
+   - Fullscreen modal component
+   - Displays English text on left, Urdu on right
+   - Can read aligned paragraphs together
+
+----------------------------
+3.4 MAP SCREEN (MapScreen.tsx)
+----------------------------
+
+PURPOSE: Display interactive map of landmarks and nearby hotels
+
+HOW IT WORKS:
+
+1. MAP SETUP:
+   - Uses react-native-maps MapView component
+   - Initial region covers Lahore area (LAHORE constant)
+   - User location (if available) centers map
+
+2. INITIAL REGION LOGIC:
+   - If user location enabled: Centers on user with zoom level
+   - Else if landmarks loaded: Centers on first landmark
+   - Else: Uses Lahore as default region
+
+3. FILTER SYSTEM:
+
+   MapCategoryChips Component:
+   - User can filter landmarks by category
+   - Available filters: "all", individual categories, "hotels"
+   - Clicking filter updates the display
+   - Visible landmarks are calculated with useMemo
+
+4. LOCATION SERVICES:
+
+   useUserLocation Hook:
+   - Requests device location permission
+   - Returns user's current latitude/longitude
+   - Provides refresh function to update location
+   - Used for:
+     * Centering map on user
+     * Finding nearby hotels
+     * Calculating distances to landmarks
+
+5. LANDMARKS ON MAP:
+
+   If showLandmarks is true:
+   - Marker placed at each landmark's coordinate
+   - visibleLandmarks are filtered by selected category
+   - Tapping marker opens landmark details in alert
+   - Bottom sheet option to view full details
+
+   fitToCoordinates():
+   - Auto-fits map to show all visible landmarks
+   - Uses edge padding to position correctly
+   - Only happens once on first load
+
+6. HOTELS FEATURE:
+
+   If showHotels is true (filter = "hotels"):
+   - Calls fetchNearbyHotels(userLocation)
+   - Finds hotels within 8 km of user
+   - Displays as markers on map
+   - Tapping hotel shows:
+     * Hotel name, address, distance
+     * "Open in Maps" button to use native maps app
+
+7. BOTTOM ACTION BUTTONS:
+
+   - Location button: Calls centerOnUser()
+     * Animates map to show user location
+     * Shows error if permission denied
+
+   - See all landmarks: Re-centers to fit all visible landmarks
+
+8. ERROR HANDLING:
+   - If landmarks fail to load: Shows error message
+   - If location unavailable: Shows alert with reason
+   - If hotels not found: Shows "No hotels within 8 km" message
+
+----------------------------
+3.5 PROFILE SCREEN (ProfileScreen.tsx)
+----------------------------
+
+PURPOSE: Show user profile and manage saved landmarks
+
+HOW IT WORKS:
+
+1. USER INFORMATION SECTION:
+   - Avatar with first letter of name
+   - Display name
+   - Email address
+   - From useAuth() context
+
+2. ADMIN PANEL (if user is admin):
+   - Only shows if isAdminUser(user) returns true
+   - Card with shield icon
+   - Text: "View, block, or delete users"
+   - Navigates to AdminUsersScreen
+
+3. SAVED LANDMARKS SECTION:
+
+   Header:
+   - Shows "Saved landmarks"
+   - Displays count of saved items
+
+   FlatList of saved landmarks:
+   - Each item shows:
+     * Landmark icon
+     * Name
+     * Category and confidence %
+     * Delete button (trash icon)
+   - Tapping item navigates to DetailScreen
+   - Trash icon calls removeLandmark() to delete
+
+   Empty State (if no saved):
+   - Shows large image icon
+   - Text: "No saves yet"
+   - Instructions: "Scan a site from the camera tab and tap Save."
+
+4. SIGN OUT:
+   - Bottom button with outline style
+   - Calls logout() from useAuth()
+   - Clears user session and returns to login screen
+
+================================================================================
+4. 3D VIEWER SCREENS
+================================================================================
+
+----------------------------
+4.1 MODEL 3D VIEWER SCREEN (Model3DViewerScreen.tsx)
+----------------------------
+
+PURPOSE: Display interactive 3D model of landmark that can be rotated/zoomed
+
+HOW IT WORKS:
+
+1. MODEL LOADING:
+   - Gets landmark model from getLandmarkModelModule()
+   - If model doesn't exist, shows error
+   - If exists, renders LandmarkModelViewer component
+
+2. BACK BUTTON HANDLING:
+   - Custom handler for Android back button
+   - Checks if can go back in navigation
+   - Returns to previous screen
+   - If no previous screen, navigates to MainTabs
+
+3. HEADER:
+   - Fixed position at top
+   - Shows landmark name
+   - Subtitle: "3D model · drag to explore"
+   - Back button with circular background
+
+4. VIEWER SECTION:
+   - Takes up center of screen
+   - LandmarkModelViewer handles 3D rendering
+   - Uses three.js or similar for 3D graphics
+   - Handles model loading errors
+
+5. FOOTER HINT:
+   - Bottom text: "Pinch to zoom · one finger to rotate"
+   - Instructions for interacting with model
+
+6. ERROR STATES:
+   - If no model available: Shows icon and "No 3D model available" message
+   - If loading: Shows spinner
+   - If error during load: Shows error message and "Go back" button
+
+----------------------------
+4.2 LANDMARK 3D IMAGE SCREEN (Landmark3DImageScreen.tsx)
+----------------------------
+
+PURPOSE: Display static 3D image preview (faster than full 3D model)
+
+HOW IT WORKS:
+
+1. IMAGE LOADING:
+   - Gets image source from getLandmark3dImageSource()
+   - Uses expo-image Image component for fast loading
+
+2. HEADER:
+   - Shows landmark name
+   - Subtitle: "3D image preview"
+   - Back button
+
+3. IMAGE DISPLAY:
+   - ScrollView allows zooming with pinch gesture
+   - minimumZoomScale: 1x (normal)
+   - maximumZoomScale: 3x (zoomed)
+   - Image centered on screen
+
+4. FOOTER:
+   - Shows hint: "Pinch to zoom"
+   - Notes that mock file location can be replaced
+
+5. BACK HANDLING:
+   - Same pattern as Model3DViewerScreen
+   - Returns to previous screen or MainTabs
+
+================================================================================
+5. ADMIN SCREEN
+================================================================================
+
+----------------------------
+5.1 ADMIN USERS SCREEN (AdminUsersScreen.tsx)
+----------------------------
+
+PURPOSE: Allow admin users to manage other users (block, delete, view status)
+
+HOW IT WORKS:
+
+1. ACCESS CONTROL:
+   - Only accessible to users with role: "admin"
+   - Called from Profile screen
+   - currentUser.id determines if user can perform actions
+
+2. DATA LOADING:
+
+   loadUsers():
+   - Calls fetchAdminUsers() to get all users from backend
+   - Sets loading state during fetch
+   - Catches and displays errors
+   - Supports refresh (pull-down to refresh)
+
+   useFocusEffect:
+   - Reloads users when screen comes into focus
+   - Ensures fresh data when returning to screen
+
+3. USER LIST (FlatList):
+   - Renders all users returned from API
+   - Each item shows user card with:
+
+4. USER CARD LAYOUT:
+
+   Avatar:
+   - Circle with first letter of name
+
+   User Info:
+   - Name
+   - Email
+   - Badge row showing:
+     * Role (admin/user)
+     * Verification status (Verified/Unverified)
+     * Account status (Active/Blocked)
+   - Joined date
+
+   "You" badge (if current user):
+   - Highlighted differently
+   - Cannot be deleted or blocked
+
+5. ADMIN ACTIONS:
+
+   Block/Unblock User:
+   - confirmBlockToggle(): Shows alert asking for confirmation
+   - Prevents admin from blocking themselves
+   - handleBlockToggle(): Calls setUserBlocked() API
+   - Updates user list UI after action
+   - Shows error if action fails
+
+   Delete User:
+   - confirmDelete(): Shows destructive confirmation alert
+   - Prevents admin from deleting themselves
+   - handleDelete(): Calls deleteAdminUser() API
+   - Removes user from list after deletion
+   - Shows error if action fails
+
+6. STATES:
+
+   actionId: Tracks which user action is in progress
+   - Shows loader on that user's card
+   - Prevents multiple simultaneous actions
+
+   Error State:
+   - Shows error message if fetch fails
+   - No users displayed until successful load
+
+   Loading State:
+   - Shows spinner on initial load
+   - Shows refresh control for pull-to-refresh
+
+================================================================================
+6. NAVIGATION FLOW
+================================================================================
+
+The app uses nested navigation with React Navigation:
+
+AUTHENTICATION STACK (AuthStackNavigator):
+├── Login Screen
+├── Register Screen
+├── Forgot Password Screen
+├── OTP Verification Screen
+└── Reset Password Screen
+
+MAIN APP STACK (MainTabNavigator - Bottom Tabs):
+├── Home Tab → Home Screen
+├── Scan Tab → Scan Screen
+├── Map Tab → Map Screen
+└── Profile Tab → Profile Screen
+
+NESTED WITHIN MAIN: (AppNavigator - Stack on top of tabs)
+├── Detail Screen (opened from any tab)
+├── Model3D Viewer Screen
+├── Landmark3D Image Screen
+└── Admin Users Screen (from Profile)
+
+FLOW DIAGRAMS:
+
+1. FIRST TIME USERS:
+   App Launch → Login Screen
+   → "New here?" link → Register Screen
+   → Create account → [Auto-login]
+   → Home Screen (Main App)
+
+2. FORGOT PASSWORD FLOW:
+   Login Screen → "Forgot password?" link
+   → Forgot Password Screen
+   → Submit email → OTP Verification Screen
+   → Verify code → Reset Password Screen
+   → Create new password → Login Screen
+
+3. LANDMARK EXPLORATION:
+   Home Screen → Scan button → Scan Screen
+   → Take photo → [AI Recognition] → Detail Screen
+   → View 3D Model / Listen / Translate / Save
+
+4. MAP EXPLORATION:
+   Home Screen → Map button → Map Screen
+   → Select filter → Tap landmark marker → Detail Screen
+   OR
+   → Select hotels filter → Tap hotel marker → Open in Maps
+
+5. PROFILE & SAVED:
+   Home Screen → Profile tab → Profile Screen
+   → View saved landmarks → Tap landmark → Detail Screen
+   OR
+   → [Admin only] Admin panel → Admin Users Screen
+
+================================================================================
+7. KEY UTILITIES & PATTERNS USED
+================================================================================
+
+CONTEXT API:
+- AuthContext: Manages user login state and logout
+- SavedLandmarksContext: Manages user's saved landmarks collection
+
+CUSTOM HOOKS:
+- useLandmarks(): Fetches all landmarks, handles loading/errors
+- useUserLocation(): Gets device location, handles permissions
+- useBilingualLandmark(): Handles English/Urdu translation and speech
+
+API SERVICE:
+- api.auth.login(): Authenticate user
+- api.auth.register(): Create new account
+- api.ai.recognize(): Send photo for landmark recognition
+- api (landmarks): Fetch landmark data
+- Admin APIs: Fetch/modify user data
+
+VALIDATION:
+- validateLogin(): Checks email format and password length
+- validateRegister(): Checks all registration fields
+- validateOtpInput(): Checks 6-digit code format
+- And more for other screens
+
+STYLING:
+- theme.ts: Centralized colors, spacing, shadows
+- StyleSheet.create(): React Native styles
+- Animated API: Smooth animations (button scaling, pulsing)
+- Safe area context: Device notch handling
+
+================================================================================
+SUMMARY
+================================================================================
+
+The AI-Tourist app is a comprehensive React Native application that:
+
+1. AUTHENTICATES users securely with email/password
+2. RECOGNIZES landmarks using on-device AI camera integration
+3. DISPLAYS detailed information with bilingual support (English + Urdu)
+4. PROVIDES 3D visualizations of landmarks
+5. ENABLES offline functionality with downloadable content
+6. MAPS nearby landmarks and hotels geographically
+7. SAVES user preferences and landmark collections
+8. INCLUDES ADMIN TOOLS for user management
+
+Each screen follows a consistent pattern:
+- Navigation hooks for movement between screens
+- React hooks (useState, useEffect, useMemo) for state management
+- Custom components for reusable UI elements
+- Error handling and loading states
+- Accessible design with safe areas and keyboard handling
+
+The code demonstrates modern React Native best practices including:
+- Component composition
+- Context API for global state
+- Custom hooks for logic reuse
+- Type safety with TypeScript
+- Proper navigation patterns
+- Animated interactions
+- Responsive design
+
+================================================================================
+END OF EXPLANATION
+================================================================================

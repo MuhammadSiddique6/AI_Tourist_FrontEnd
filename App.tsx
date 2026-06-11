@@ -6,6 +6,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { colors } from "./src/constants/theme";
 import { AuthProvider, useAuth } from "./src/context/AuthContext";
 import { SavedLandmarksProvider } from "./src/context/SavedLandmarksContext";
+import { SpeechProvider } from "./src/context/SpeechContext";
 import { AppNavigator } from "./src/navigation/AppNavigator";
 
 const navTheme = {
@@ -38,7 +39,9 @@ export default function App() {
       <SafeAreaProvider>
         <AuthProvider>
           <SavedLandmarksProvider>
-            <NavigationRoot />
+            <SpeechProvider>
+              <NavigationRoot />
+            </SpeechProvider>
           </SavedLandmarksProvider>
         </AuthProvider>
       </SafeAreaProvider>

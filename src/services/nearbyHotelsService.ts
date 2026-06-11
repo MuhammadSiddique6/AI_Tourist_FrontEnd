@@ -1,3 +1,4 @@
+import { enrichHotelsWithMockDetails } from "../constants/hotelMockDetails";
 import type { NearbyHotel } from "../types/hotel";
 import { distanceMeters, type LatLng } from "../utils/geo";
 
@@ -147,7 +148,9 @@ export async function fetchNearbyHotels(
     );
   }
 
-  return hotels
-    .sort((a, b) => a.distanceMeters - b.distanceMeters)
-    .slice(0, MAX_HOTELS);
+  return enrichHotelsWithMockDetails(
+    hotels
+      .sort((a, b) => a.distanceMeters - b.distanceMeters)
+      .slice(0, MAX_HOTELS),
+  );
 }

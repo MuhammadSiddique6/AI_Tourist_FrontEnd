@@ -6,9 +6,16 @@ const SPEECH_LOCALES: Record<ContentLanguage, string> = {
   ur: "ur-PK",
 };
 
+type SpeechCallbacks = {
+  onStart?: () => void;
+  onDone?: () => void;
+  onStopped?: () => void;
+};
+
 export function speakLandmarkSummary(
   text: string,
   language: ContentLanguage = "en",
+  callbacks?: SpeechCallbacks,
 ): void {
   if (!text.trim()) return;
   Speech.stop();
@@ -16,6 +23,9 @@ export function speakLandmarkSummary(
     language: SPEECH_LOCALES[language],
     pitch: 1,
     rate: language === "ur" ? 0.88 : 0.95,
+    onStart: callbacks?.onStart,
+    onDone: callbacks?.onDone,
+    onStopped: callbacks?.onStopped,
   });
 }
 

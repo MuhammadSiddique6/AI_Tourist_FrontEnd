@@ -7,15 +7,16 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  Linking,
   Pressable,
   StyleSheet,
   Text,
   View,
 } from "react-native";
-import MapView, { Marker, type Region } from "react-native-maps";
+import MapView, { Marker, Polyline, type Region } from "react-native-maps";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { HotelDetailPanel } from "../components/HotelDetailPanel";
 import { MapCategoryChips } from "../components/MapCategoryChips";
+import { HOTEL_MAP_COLOR } from "../constants/mapFilters";
 import { colors, radii, shadows } from "../constants/theme";
 import { useLandmarks } from "../hooks/useLandmarks";
 import { useUserLocation } from "../hooks/useUserLocation";
@@ -27,7 +28,7 @@ import { fetchNearbyHotels } from "../services/nearbyHotelsService";
 import type { NearbyHotel } from "../types/hotel";
 import type { Landmark } from "../types/landmark";
 import type { AppStackParamList, MainTabParamList } from "../types/navigation";
-import { formatDistance } from "../utils/geo";
+import type { LatLng } from "../utils/geo";
 
 type MapNav = CompositeNavigationProp<
   BottomTabNavigationProp<MainTabParamList, "Map">,
@@ -43,6 +44,7 @@ const LAHORE: Region = {
 };
 
 const ZOOM_DELTA = 0.045;
+const ROUTE_COLOR = HOTEL_MAP_COLOR;
 
 export function MapScreen() {
   const navigation = useNavigation<MapNav>();
@@ -61,6 +63,8 @@ export function MapScreen() {
   const [hotels, setHotels] = useState<NearbyHotel[]>([]);
   const [hotelsLoading, setHotelsLoading] = useState(false);
   const [hotelsError, setHotelsError] = useState<string | null>(null);
+  const [selectedHotel, setSelectedHotel] = useState<NearbyHotel | null>(null);
+  const [showRoute, setShowRoute] = useState(false);
 
   const visibleLandmarks = useMemo(
     () => filterLandmarksByCategory(landmarks, filter),
@@ -100,6 +104,9 @@ export function MapScreen() {
   useEffect(() => {
     if (showHotels) {
       loadHotels();
+    } else {
+      setSelectedHotel(null);
+      setShowRoute(false);
     }
   }, [showHotels, loadHotels]);
 
@@ -122,6 +129,22 @@ export function MapScreen() {
   const bottomPad = 56 + insets.bottom;
   const hasFittedLandmarks = useRef(false);
 
+  const fitCoordinates = useCallback(
+    (coords: LatLng[], animated = true) => {
+      if (!mapRef.current || coords.length === 0) return;
+      mapRef.current.fitToCoordinates(coords, {
+        edgePadding: {
+          top: 100 + insets.top,
+          right: 48,
+          bottom: selectedHotel ? bottomPad + 280 : bottomPad + 90,
+          left: 48,
+        },
+        animated,
+      });
+    },
+    [insets.top, bottomPad, selectedHotel],
+  );
+
   useEffect(() => {
     if (
       hasFittedLandmarks.current ||
@@ -143,22 +166,8 @@ export function MapScreen() {
     if (coords.length === 0) return;
 
     hasFittedLandmarks.current = true;
-    mapRef.current.fitToCoordinates(coords, {
-      edgePadding: {
-        top: 100 + insets.top,
-        right: 48,
-        bottom: bottomPad + 90,
-        left: 48,
-      },
-      animated: true,
-    });
-  }, [
-    visibleLandmarks,
-    showLandmarks,
-    loading,
-    insets.top,
-    bottomPad,
-  ]);
+    fitCoordinates(coords);
+  }, [visibleLandmarks, showLandmarks, loading, fitCoordinates]);
 
   const centerOnUser = useCallback(async () => {
     const coords = userLocation ?? (await refreshLocation());
@@ -183,37 +192,47 @@ export function MapScreen() {
     navigation.navigate("Detail", { landmark });
   };
 
-  const openHotel = (hotel: NearbyHotel) => {
-    const { latitude, longitude } = hotel.coordinate;
-    const lines = [
-      `${formatDistance(hotel.distanceMeters)} from you`,
-      hotel.address,
-      hotel.type ? hotel.type : null,
-    ].filter(Boolean);
+  const selectHotel = useCallback(
+    (hotel: NearbyHotel) => {
+      setSelectedHotel(hotel);
+      setShowRoute(false);
 
-    Alert.alert(
-      hotel.name,
-      lines.join("\n"),
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Open in Maps",
-          onPress: () => {
-            const url = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
-            Linking.openURL(url).catch(() => {
-              Alert.alert("Could not open maps app");
-            });
-          },
-        },
-      ],
-    );
-  };
+      const coords: LatLng[] = [hotel.coordinate];
+      if (userLocation) coords.unshift(userLocation);
+      fitCoordinates(coords);
+    },
+    [userLocation, fitCoordinates],
+  );
+
+  const showHotelRoute = useCallback(() => {
+    if (!selectedHotel) return;
+    if (!userLocation) {
+      Alert.alert(
+        "Location needed",
+        "Enable location to draw the route from where you are.",
+      );
+      return;
+    }
+    setShowRoute(true);
+    fitCoordinates([userLocation, selectedHotel.coordinate]);
+  }, [selectedHotel, userLocation, fitCoordinates]);
+
+  const closeHotelDetail = useCallback(() => {
+    setSelectedHotel(null);
+    setShowRoute(false);
+  }, []);
+
+  const routeCoordinates = useMemo((): LatLng[] => {
+    if (!showRoute || !selectedHotel || !userLocation) return [];
+    return [userLocation, selectedHotel.coordinate];
+  }, [showRoute, selectedHotel, userLocation]);
 
   const footerSubtext = useMemo(() => {
     if (showHotels) {
       if (hotelsLoading) return "Searching hotels near you…";
       if (hotelsError) return hotelsError;
-      return `${hotels.length} hotel${hotels.length === 1 ? "" : "s"} near you`;
+      if (selectedHotel) return `Selected: ${selectedHotel.name}`;
+      return `${hotels.length} hotel${hotels.length === 1 ? "" : "s"} near you · tap a pin`;
     }
     if (loading) return "Loading landmarks…";
     if (error) return "Could not load landmarks";
@@ -223,6 +242,7 @@ export function MapScreen() {
     hotelsLoading,
     hotelsError,
     hotels.length,
+    selectedHotel,
     loading,
     error,
     visibleLandmarks.length,
@@ -263,17 +283,22 @@ export function MapScreen() {
                 key={hotel.id}
                 coordinate={hotel.coordinate}
                 title={hotel.name}
-                description={
-                  hotel.address
-                    ? `${formatDistance(hotel.distanceMeters)} · ${hotel.address}`
-                    : formatDistance(hotel.distanceMeters)
-                }
-                pinColor="#7C3AED"
-                onCalloutPress={() => openHotel(hotel)}
-                onPress={() => openHotel(hotel)}
+                description={hotel.address ?? "Hotel"}
+                pinColor="red"
+                onPress={() => selectHotel(hotel)}
               />
             ))
           : null}
+
+        {routeCoordinates.length >= 2 ? (
+          <Polyline
+            coordinates={routeCoordinates}
+            strokeColor={ROUTE_COLOR}
+            strokeWidth={5}
+            lineDashPattern={[1]}
+          />
+        ) : null}
+
       </MapView>
 
       <MapCategoryChips active={filter} onChange={setFilter} />
@@ -290,37 +315,53 @@ export function MapScreen() {
         )}
       </Pressable>
 
-      
-
-      <View style={[styles.footer, { bottom: bottomPad }]}>
-        <View style={styles.titlePill}>
-          <Text style={styles.screenTitle}>
-            {showHotels ? "Nearby hotels" : "Heritage map"}
-          </Text>
-          {loading && showLandmarks && !error ? (
-            <ActivityIndicator color={colors.primary} style={{ marginTop: 8 }} />
-          ) : hotelsLoading && showHotels ? (
-            <ActivityIndicator color={colors.primary} style={{ marginTop: 8 }} />
-          ) : (
-            <Text style={styles.screenSub}>{footerSubtext}</Text>
-          )}
-          {error && showLandmarks ? (
-            <Pressable onPress={refresh} style={styles.retryWrap}>
-              <Text style={styles.retry}>Retry landmarks</Text>
-            </Pressable>
-          ) : null}
-          {hotelsError && showHotels && !hotelsLoading ? (
-            <Pressable onPress={loadHotels} style={styles.retryWrap}>
-              <Text style={styles.retry}>Retry hotels</Text>
-            </Pressable>
-          ) : null}
-          {locationStatus === "denied" ? (
-            <Pressable onPress={refreshLocation} style={styles.retryWrap}>
-              <Text style={styles.retry}>Enable location</Text>
-            </Pressable>
-          ) : null}
+      {selectedHotel && showHotels ? (
+        <View style={[styles.hotelPanelWrap, { bottom: bottomPad + 8 }]}>
+          <HotelDetailPanel
+            hotel={selectedHotel}
+            userLocation={userLocation}
+            onClose={closeHotelDetail}
+            onShowRoute={showHotelRoute}
+          />
         </View>
-      </View>
+      ) : (
+        <View style={[styles.footer, { bottom: bottomPad }]}>
+          <View style={styles.titlePill}>
+            <View style={styles.titleRow}>
+              {showHotels ? (
+                <Ionicons name="business" size={22} color={HOTEL_MAP_COLOR} />
+              ) : (
+                <Ionicons name="map" size={22} color={colors.primary} />
+              )}
+              <Text style={styles.screenTitle}>
+                {showHotels ? "Nearby hotels" : "Heritage map"}
+              </Text>
+            </View>
+            {loading && showLandmarks && !error ? (
+              <ActivityIndicator color={colors.primary} style={{ marginTop: 8 }} />
+            ) : hotelsLoading && showHotels ? (
+              <ActivityIndicator color={HOTEL_MAP_COLOR} style={{ marginTop: 8 }} />
+            ) : (
+              <Text style={styles.screenSub}>{footerSubtext}</Text>
+            )}
+            {error && showLandmarks ? (
+              <Pressable onPress={refresh} style={styles.retryWrap}>
+                <Text style={styles.retry}>Retry landmarks</Text>
+              </Pressable>
+            ) : null}
+            {hotelsError && showHotels && !hotelsLoading ? (
+              <Pressable onPress={loadHotels} style={styles.retryWrap}>
+                <Text style={styles.retry}>Retry hotels</Text>
+              </Pressable>
+            ) : null}
+            {locationStatus === "denied" ? (
+              <Pressable onPress={refreshLocation} style={styles.retryWrap}>
+                <Text style={styles.retry}>Enable location</Text>
+              </Pressable>
+            ) : null}
+          </View>
+        </View>
+      )}
     </View>
   );
 }
@@ -338,24 +379,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     ...shadows.elevated,
   },
-  locationBanner: {
+  footer: {
     position: "absolute",
     left: 14,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    backgroundColor: colors.surface,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: radii.pill,
-    ...shadows.elevated,
+    right: 14,
   },
-  locationBannerText: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: colors.primary,
-  },
-  footer: {
+  hotelPanelWrap: {
     position: "absolute",
     left: 14,
     right: 14,
@@ -365,6 +394,11 @@ const styles = StyleSheet.create({
     borderRadius: radii.lg,
     padding: 14,
     ...shadows.elevated,
+  },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   screenTitle: { fontSize: 18, fontWeight: "900", color: colors.text },
   screenSub: {
